@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/auth/auth_provider.dart';
 import '../../../core/widgets/custom_header.dart';
 
-class SettingScreen extends StatefulWidget {
+class SettingScreen extends ConsumerStatefulWidget {
   const SettingScreen({super.key});
 
   @override
-  State<SettingScreen> createState() => _SettingScreenState();
+  ConsumerState<SettingScreen> createState() => _SettingScreenState();
 }
 
-class _SettingScreenState extends State<SettingScreen> {
-  bool isLogoutDialogVisible = false;
-
+class _SettingScreenState extends ConsumerState<SettingScreen> {
   final List<Map<String, dynamic>> menuItems = [
     {'title': 'Trang cá nhân của tôi', 'icon': Feather.user},
     {'title': 'Liên hệ', 'icon': Feather.help_circle},
@@ -31,16 +31,17 @@ class _SettingScreenState extends State<SettingScreen> {
       );
 
       if (confirm == true) {
+        await ref.read(authProvider.notifier).signOut();
         if (mounted) {
-          GoRouter.of(context).go('/sign-in');
+          context.go('/sign-in');
         }
       }
     } else if (title == 'Trang cá nhân của tôi') {
-      GoRouter.of(context).push('/profile');
+      context.push('/profile');
     } else if (title == 'Liên hệ') {
-      GoRouter.of(context).push('/contact');
+      context.push('/contact');
     } else if (title == 'Chính sách bảo mật') {
-      GoRouter.of(context).push('/privacy');
+      context.push('/privacy');
     }
   }
 
@@ -117,6 +118,8 @@ class _SettingScreenState extends State<SettingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final currentUser = ref.watch(authProvider).user;
+
     return Scaffold(
       backgroundColor: const Color(0xfff0f4ff),
       body: SafeArea(
@@ -136,9 +139,10 @@ class _SettingScreenState extends State<SettingScreen> {
                     CircleAvatar(
                       radius: 40,
                       backgroundColor: Colors.white,
-                      backgroundImage: AssetImage(
-                        "assets/images/default-avatar.jpg",
-                      ),
+                      backgroundImage: currentUser?.avatar != null
+                          ? NetworkImage(currentUser!.avatar!)
+                          : const AssetImage("assets/images/default-avatar.jpg")
+                                as ImageProvider,
                     ),
                     Positioned(
                       bottom: 0,
@@ -160,9 +164,9 @@ class _SettingScreenState extends State<SettingScreen> {
                   ],
                 ),
                 const SizedBox(height: 10),
-                const Text(
-                  "Lương Võ Nhật Tân",
-                  style: TextStyle(
+                Text(
+                  currentUser?.name ?? 'Khách',
+                  style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: Colors.black87,

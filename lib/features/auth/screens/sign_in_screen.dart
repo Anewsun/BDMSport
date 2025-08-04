@@ -1,22 +1,29 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/widgets/input_field.dart';
-import '../../../core/widgets/password_field.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import '../../../core/auth/auth_provider.dart';
+import '../../../core/utils/error_util.dart';
+import '../controllers/sign_in_controller.dart';
+import '../widgets/sign_in_divider.dart';
+import '../widgets/sign_in_footer.dart';
+import '../widgets/sign_in_form.dart';
+import '../widgets/sign_in_header.dart';
 import '../../../core/widgets/social_login.dart';
 
-class SignInScreen extends StatefulWidget {
+class SignInScreen extends ConsumerStatefulWidget {
   const SignInScreen({super.key});
 
   @override
-  State<SignInScreen> createState() => _SignInScreenState();
+  ConsumerState<SignInScreen> createState() => _SignInScreenState();
 }
 
-class _SignInScreenState extends State<SignInScreen> {
+class _SignInScreenState extends ConsumerState<SignInScreen> {
+  final _formKey = GlobalKey<FormState>();
   String email = '';
   String password = '';
   bool showPassword = false;
+  bool _autoValidate = false;
 
   void toggleShowPassword() {
     setState(() {
@@ -24,8 +31,72 @@ class _SignInScreenState extends State<SignInScreen> {
     });
   }
 
-  void handleLogin(BuildContext context) {
-    context.go('/home');
+  Future<void> handleLogin() async {
+    setState(() => _autoValidate = true);
+
+    if (!_formKey.currentState!.validate()) {
+      if (email.isEmpty || password.isEmpty) {
+        Fluttertoast.showToast(
+          msg: "Vui lòng nhập email và mật khẩu",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+          fontSize: 16.0,
+        );
+      }
+      return;
+    }
+
+    _formKey.currentState?.save();
+
+    final controller = ref.read(signInControllerProvider);
+    final success = await controller.login(email, password);
+
+    if (success && mounted) {
+      context.go('/home');
+    } else if (!success && mounted) {
+      final error = controller.error;
+      if (error != null) {
+        if (error.code == 'email-not-verified') {
+          ref.read(authProvider.notifier).setLoading(false);
+
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Email chưa xác nhận'),
+              content: Text(
+                'Bạn cần xác nhận email trước khi đăng nhập. '
+                'Vui lòng kiểm tra hộp thư $email và làm theo hướng dẫn.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _formKey.currentState?.reset();
+                    setState(() {
+                      email = '';
+                      password = '';
+                      _autoValidate = false;
+                    });
+                  },
+                  child: const Text('Đóng'),
+                ),
+              ],
+            ),
+          );
+        } else {
+          Fluttertoast.showToast(
+            msg: getFriendlyErrorMessage(error),
+            toastLength: Toast.LENGTH_LONG,
+            gravity: ToastGravity.BOTTOM,
+            backgroundColor: Colors.red,
+            textColor: Colors.white,
+            fontSize: 16.0,
+          );
+        }
+      }
+    }
   }
 
   @override
@@ -36,104 +107,18 @@ class _SignInScreenState extends State<SignInScreen> {
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 20),
-              const Text(
-                'BDM SPORT',
-                style: TextStyle(
-                  color: Colors.blue,
-                  fontSize: 48,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
+              const SignInHeader(),
+              SignInForm(
+                formKey: _formKey,
+                autoValidate: _autoValidate,
+                onEmailSaved: (value) => email = value ?? '',
+                onPasswordSaved: (value) => password = value ?? '',
+                onLoginPressed: handleLogin,
+                toggleShowPassword: toggleShowPassword,
+                showPassword: showPassword,
               ),
-              const SizedBox(height: 20),
-              const Text(
-                'Chào mừng bạn trở lại',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Đăng nhập để tiếp tục sử dụng ứng dụng của chúng tôi',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.black,
-                  fontFamily: 'Times New Roman',
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Email',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              const SizedBox(height: 4),
-              InputField(
-                icon: FontAwesomeIcons.envelope,
-                placeholder: 'Email',
-                onChanged: (value) => setState(() => email = value),
-              ),
-              const SizedBox(height: 10),
-              const Text(
-                'Mật khẩu',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              const SizedBox(height: 4),
-              PasswordField(
-                value: password,
-                isVisible: showPassword,
-                onToggle: toggleShowPassword,
-                onChanged: (v) => setState(() => password = v),
-              ),
-              const SizedBox(height: 10),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () {
-                    context.push('/send-email');
-                  },
-                  child: const Text(
-                    'Quên mật khẩu?',
-                    style: TextStyle(
-                      color: Color(0xFF1167B1),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 5),
-              ElevatedButton(
-                onPressed: () => handleLogin(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1167B1),
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                ),
-                child: const Text(
-                  'Đăng nhập',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'HOẶC',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 17,
-                  color: Colors.black,
-                ),
-              ),
-              const SizedBox(height: 16),
+              const SignInDivider(),
               SocialLogin(
                 onGooglePress: () {
                   // TODO: Google login
@@ -142,28 +127,7 @@ class _SignInScreenState extends State<SignInScreen> {
                   // TODO: Facebook login
                 },
               ),
-              const SizedBox(height: 20),
-              Text.rich(
-                TextSpan(
-                  text: 'Chưa có tài khoản? ',
-                  style: const TextStyle(fontSize: 17, color: Colors.blueGrey),
-                  children: [
-                    TextSpan(
-                      text: 'Đăng ký',
-                      style: const TextStyle(
-                        color: Color(0xFF1167B1),
-                        fontWeight: FontWeight.bold,
-                      ),
-                      recognizer: TapGestureRecognizer()
-                        ..onTap = () {
-                          context.push('/sign-up');
-                        },
-                    ),
-                  ],
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 20),
+              const SignInFooter(),
             ],
           ),
         ),

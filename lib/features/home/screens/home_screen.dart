@@ -3,15 +3,17 @@ import 'package:bdm_sport/core/widgets/popular_location_card.dart';
 import 'package:bdm_sport/core/widgets/search_box.dart';
 import 'package:bdm_sport/navigation/bottom_nav_bar.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/auth/auth_provider.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   final List<Map<String, dynamic>> popularLocations = [
     {
       '_id': '1',
@@ -65,6 +67,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final paginatedCourts = courts.skip((currentPage - 1) * 6).take(6).toList();
 
+    final authState = ref.watch(authProvider);
+    final userName = authState.user?.name ?? 'Khách';
+
     return BottomNavBar(
       child: Scaffold(
         backgroundColor: const Color(0xFFF0F4FF),
@@ -74,26 +79,26 @@ class _HomeScreenState extends State<HomeScreen> {
                 Future.delayed(const Duration(milliseconds: 500)),
             child: ListView(
               children: [
-                const Padding(
-                  padding: EdgeInsets.fromLTRB(15, 35, 15, 0),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(15, 35, 15, 0),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Row(
                         children: [
                           Text(
-                            'Chào Lương Võ Nhật Tân!',
-                            style: TextStyle(
+                            'Chào $userName!',
+                            style: const TextStyle(
                               fontSize: 18,
                               color: Color.fromARGB(196, 239, 39, 39),
                               fontFamily: 'Times New Roman',
                             ),
                           ),
-                          SizedBox(width: 5),
-                          Icon(Icons.waving_hand, color: Colors.amber),
+                          const SizedBox(width: 5),
+                          const Icon(Icons.waving_hand, color: Colors.amber),
                         ],
                       ),
-                      Stack(
+                      const Stack(
                         children: [
                           Icon(
                             Icons.notifications,
@@ -121,6 +126,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                 ),
+
                 const Padding(
                   padding: EdgeInsets.all(20),
                   child: Text(
@@ -206,7 +212,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         Shadow(
                           blurRadius: 10,
                           color: Colors.red,
-                          offset: Offset(0, 0),
+                          offset: Offset.zero,
                         ),
                       ],
                     ),

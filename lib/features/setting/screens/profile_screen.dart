@@ -89,7 +89,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ],
             ),
-            if (loading) const LoadingOverlay(),
+            if (loading) LoadingOverlay(isLoading: true, child: Container()),
           ],
         ),
       ),
