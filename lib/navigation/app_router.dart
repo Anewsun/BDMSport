@@ -4,8 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../features/auth/screens/sign_in_screen.dart';
 import '../features/auth/screens/sign_up_screen.dart';
 import '../features/auth/screens/send_email_screen.dart';
-import '../features/auth/screens/verify_code_screen.dart';
-import '../features/auth/screens/new_password_screen.dart';
 import '../features/home/screens/home_screen.dart';
 import '../features/setting/screens/contact_screen.dart';
 import '../features/setting/screens/privacy_policy_screen.dart';
@@ -34,14 +32,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/sign-in', builder: (_, __) => const SignInScreen()),
       GoRoute(path: '/sign-up', builder: (_, __) => const SignUpScreen()),
       GoRoute(path: '/send-email', builder: (_, __) => const SendEmailScreen()),
-      GoRoute(
-        path: '/verify-code',
-        builder: (_, __) => const VerifyCodeScreen(),
-      ),
-      GoRoute(
-        path: '/new-password',
-        builder: (_, __) => const NewPasswordScreen(email: '', otp: ''),
-      ),
       GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen()),
       GoRoute(path: '/contact', builder: (_, __) => const ContactScreen()),
       GoRoute(path: '/privacy', builder: (_, _) => const PrivacyPolicyScreen()),

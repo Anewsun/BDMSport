@@ -1,19 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/auth/auth_repository.dart';
 import '../../../core/widgets/input_field.dart';
 import '../../../core/widgets/custom_header.dart';
+import '../controllers/forgot_password_controller.dart';
 
-class SendEmailScreen extends StatefulWidget {
+class SendEmailScreen extends ConsumerStatefulWidget {
   const SendEmailScreen({super.key});
 
   @override
-  State<SendEmailScreen> createState() => _SendEmailScreenState();
+  ConsumerState<SendEmailScreen> createState() => _SendEmailScreenState();
 }
 
-class _SendEmailScreenState extends State<SendEmailScreen> {
+class _SendEmailScreenState extends ConsumerState<SendEmailScreen> {
+  final _formKey = GlobalKey<FormState>();
   String email = '';
+
+  Future<void> _sendResetEmail() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final controller = ForgotPasswordController(
+      ref.read(authRepositoryProvider),
+    );
+    try {
+      await controller.sendResetPasswordEmail(email);
+      if (mounted) {
+        context.go(
+          '/sign-in',
+        ); // Quay lại trang đăng nhập sau khi gửi email thành công
+      }
+    } catch (e) {
+      // Lỗi đã được xử lý trong controller bằng Fluttertoast
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,47 +70,59 @@ class _SendEmailScreenState extends State<SendEmailScreen> {
                       maxWidth: 500,
                       minHeight: screenHeight * 0.4,
                     ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text(
-                          'Nhập email để nhận mã xác nhận',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 20),
-                        InputField(
-                          icon: FontAwesomeIcons.envelope,
-                          placeholder: 'Email',
-                          value: email,
-                          onChanged: (v) => setState(() => email = v),
-                        ),
-                        const SizedBox(height: 30),
-                        ElevatedButton(
-                          onPressed: () {
-                            context.push('/verify-code');
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF1167B1),
-                            padding: const EdgeInsets.symmetric(vertical: 15),
-                            minimumSize: const Size.fromHeight(50),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                          ),
-                          child: const Text(
-                            'Gửi mã xác nhận',
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text(
+                            'Nhập email để nhận mã xác nhận',
                             style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 20),
+                          InputField(
+                            icon: FontAwesomeIcons.envelope,
+                            placeholder: 'Email',
+                            value: email,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Vui lòng nhập email';
+                              }
+                              if (!RegExp(
+                                r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                              ).hasMatch(value)) {
+                                return 'Email không hợp lệ';
+                              }
+                              return null;
+                            },
+                            onChanged: (v) => setState(() => email = v),
+                          ),
+                          const SizedBox(height: 30),
+                          ElevatedButton(
+                            onPressed: _sendResetEmail,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF1167B1),
+                              padding: const EdgeInsets.symmetric(vertical: 15),
+                              minimumSize: const Size.fromHeight(50),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                            ),
+                            child: const Text(
+                              'Gửi mã xác nhận',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
