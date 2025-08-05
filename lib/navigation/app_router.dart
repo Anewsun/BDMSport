@@ -1,6 +1,6 @@
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
+import '../features/auth/controllers/sign_in_controller.dart';
 import '../features/auth/screens/sign_in_screen.dart';
 import '../features/auth/screens/sign_up_screen.dart';
 import '../features/auth/screens/send_email_screen.dart';
@@ -10,17 +10,17 @@ import '../features/setting/screens/privacy_policy_screen.dart';
 import '../features/setting/screens/setting_screen.dart';
 import '../features/setting/screens/profile_screen.dart';
 import 'bottom_nav_bar.dart';
-import '../core/auth/auth_provider.dart';
 
-final appRouterProvider = Provider<GoRouter>((ref) {
+final routerProvider = Provider<GoRouter>((ref) {
+  final authNotifier = ref.watch(signInControllerProvider.notifier);
+
   return GoRouter(
     initialLocation: '/sign-in',
     redirect: (context, state) async {
-      final authState = ref.read(authProvider);
+      final authState = ref.read(signInControllerProvider);
       final isLoggedIn = authState.user != null;
       final isAuthRoute = _isAuthRoute(state.matchedLocation);
 
-      // Nếu đang loading, không redirect
       if (authState.isLoading) return null;
 
       if (isLoggedIn && isAuthRoute) return '/home';
@@ -43,6 +43,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ],
       ),
     ],
+    refreshListenable: authNotifier,
     debugLogDiagnostics: true,
   );
 });
@@ -50,7 +51,5 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 bool _isAuthRoute(String location) {
   return location == '/sign-in' ||
       location == '/sign-up' ||
-      location == '/send-email' ||
-      location == '/verify-code' ||
-      location == '/new-password';
+      location == '/send-email';
 }

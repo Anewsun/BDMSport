@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import '../../../core/auth/auth_provider.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/utils/error_util.dart';
 import '../controllers/sign_in_controller.dart';
 import '../widgets/sign_in_divider.dart';
@@ -50,52 +49,39 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
     _formKey.currentState?.save();
 
-    final controller = ref.read(signInControllerProvider);
-    final success = await controller.login(email, password);
+    try {
+      final controller = ref.read(signInControllerProvider.notifier);
+      final success = await controller.login(email, password);
 
-    if (success && mounted) {
-      context.go('/home');
-    } else if (!success && mounted) {
-      final error = controller.error;
-      if (error != null) {
-        if (error.code == 'email-not-verified') {
-          ref.read(authProvider.notifier).setLoading(false);
+      if (!mounted) return;
 
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('Email chưa xác nhận'),
-              content: Text(
-                'Bạn cần xác nhận email trước khi đăng nhập. '
-                'Vui lòng kiểm tra hộp thư $email và làm theo hướng dẫn.',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    _formKey.currentState?.reset();
-                    setState(() {
-                      email = '';
-                      password = '';
-                      _autoValidate = false;
-                    });
-                  },
-                  child: const Text('Đóng'),
-                ),
-              ],
-            ),
-          );
-        } else {
-          Fluttertoast.showToast(
-            msg: getFriendlyErrorMessage(error),
-            toastLength: Toast.LENGTH_LONG,
-            gravity: ToastGravity.BOTTOM,
-            backgroundColor: Colors.red,
-            textColor: Colors.white,
-            fontSize: 16.0,
-          );
-        }
+      if (success) {
+        GoRouter.of(context).go('/home?loginSuccess=true');
+      } else {
+        final currentError = ref.read(signInControllerProvider).error;
+        Fluttertoast.showToast(
+          msg: getFriendlyErrorMessage(currentError ?? "Đăng nhập thất bại"),
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+          fontSize: 16.0,
+        );
       }
+    } catch (e, st) {
+      print('==> Error in handleLogin: $e');
+      print(st);
+
+      Fluttertoast.showToast(
+        msg: getFriendlyErrorMessage(e),
+        toastLength: Toast.LENGTH_LONG,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+        fontSize: 16.0,
+      );
+    } finally {
+      ref.read(signInControllerProvider.notifier).setLoading(false);
     }
   }
 

@@ -9,10 +9,8 @@ String getFriendlyErrorMessage(dynamic error) {
         return 'Email không hợp lệ.';
       case 'weak-password':
         return 'Mật khẩu quá yếu. Phải có ít nhất 6 ký tự.';
-      case 'user-not-found':
-        return 'Không tìm thấy tài khoản với email này.';
-      case 'wrong-password':
-        return 'Mật khẩu không đúng.';
+      case 'invalid-credential':
+        return 'Tài khoản hoặc mật khẩu không đúng.';
       case 'too-many-requests':
         return 'Đăng nhập quá nhiều lần. Vui lòng thử lại sau';
       case 'network-request-failed':

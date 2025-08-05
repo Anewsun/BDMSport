@@ -1,8 +1,8 @@
+import 'package:bdm_sport/features/auth/controllers/sign_in_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/auth/auth_provider.dart';
 import '../../../core/widgets/custom_header.dart';
 
 class SettingScreen extends ConsumerStatefulWidget {
@@ -31,7 +31,7 @@ class _SettingScreenState extends ConsumerState<SettingScreen> {
       );
 
       if (confirm == true) {
-        await ref.read(authProvider.notifier).signOut();
+        await ref.read(signInControllerProvider.notifier).signOut();
         if (mounted) {
           context.go('/sign-in');
         }
@@ -118,7 +118,7 @@ class _SettingScreenState extends ConsumerState<SettingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final currentUser = ref.watch(authProvider).user;
+    final currentUser = ref.watch(signInControllerProvider).user;
 
     return Scaffold(
       backgroundColor: const Color(0xfff0f4ff),

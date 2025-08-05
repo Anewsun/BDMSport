@@ -99,4 +99,40 @@ class UserModel {
       updatedAt: DateTime.now(),
     );
   }
+
+  UserModel copyWith({
+    String? id,
+    String? name,
+    String? email,
+    String? phone,
+    String? provider,
+    bool? isEmailVerified,
+    String? address,
+    String? role,
+    String? avatar,
+    String? status,
+    String? tier,
+    double? balance,
+    List<String>? favoriteCourts,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return UserModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      email: email ?? this.email,
+      phone: phone ?? this.phone,
+      provider: provider ?? this.provider,
+      isEmailVerified: isEmailVerified ?? this.isEmailVerified,
+      address: address ?? this.address,
+      role: role ?? this.role,
+      avatar: avatar ?? this.avatar,
+      status: status ?? this.status,
+      tier: tier ?? this.tier,
+      balance: balance ?? this.balance,
+      favoriteCourts: favoriteCourts ?? this.favoriteCourts,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
 }

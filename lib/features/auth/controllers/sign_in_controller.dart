@@ -1,56 +1,104 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/auth/auth_provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../core/models/user_model.dart';
 
-final signInControllerProvider = Provider.autoDispose<SignInController>((ref) {
-  return SignInController(ref);
-});
+class AuthState {
+  final UserModel? user;
+  final bool isLoading;
+  final dynamic error;
 
-class SignInController {
-  final Ref ref;
-  FirebaseAuthException? error;
+  const AuthState({this.user, this.isLoading = false, this.error});
 
-  SignInController(this.ref);
+  AuthState copyWith({UserModel? user, bool? isLoading, dynamic error}) {
+    return AuthState(
+      user: user ?? this.user,
+      isLoading: isLoading ?? this.isLoading,
+      error: error ?? this.error,
+    );
+  }
+}
+
+final signInControllerProvider = NotifierProvider<SignInController, AuthState>(
+  SignInController.new,
+);
+
+class SignInController extends Notifier<AuthState> implements Listenable {
+  final List<VoidCallback> _listeners = [];
+
+  @override
+  AuthState build() => const AuthState();
+
+  @override
+  void addListener(VoidCallback listener) {
+    _listeners.add(listener);
+  }
+
+  @override
+  void removeListener(VoidCallback listener) {
+    _listeners.remove(listener);
+  }
+
+  void _notifyListeners() {
+    for (final listener in _listeners) {
+      listener();
+    }
+  }
+
+  Future<void> _syncUserState() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+
+      if (snapshot.exists) {
+        final model = UserModel.fromMap(snapshot.data()!);
+        state = state.copyWith(user: model, isLoading: false);
+        _notifyListeners();
+      }
+    } else {
+      state = state.copyWith(user: null, isLoading: false);
+      _notifyListeners();
+    }
+  }
 
   Future<bool> login(String email, String password) async {
-    if (email.isEmpty || password.isEmpty) {
-      return false;
-    }
-
-    final notifier = ref.read(authProvider.notifier);
-
     try {
-      error = null;
-      notifier.setLoading(true);
-      await notifier.signInWithEmailAndPassword(
+      state = state.copyWith(isLoading: true, error: null);
+      _notifyListeners();
+
+      final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
 
-      final currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser != null && !currentUser.emailVerified) {
-        error = FirebaseAuthException(
+      if (!credential.user!.emailVerified) {
+        throw FirebaseAuthException(
           code: 'email-not-verified',
-          message:
-              'Email chưa được xác minh. Vui lòng kiểm tra hộp thư của bạn.',
+          message: 'Email chưa xác minh.',
         );
-        await FirebaseAuth.instance.signOut();
-        return false;
       }
 
+      await _syncUserState();
       return true;
     } on FirebaseAuthException catch (e) {
-      error = e;
+      state = state.copyWith(error: e, isLoading: false);
+      _notifyListeners();
       return false;
-    } finally {
-      notifier.setLoading(false);
     }
   }
 
-  bool get isLoading => ref.read(authProvider).isLoading;
+  Future<void> signOut() async {
+    await FirebaseAuth.instance.signOut();
+    state = const AuthState();
+    _notifyListeners();
+  }
 
-  String? get errorMessage {
-    if (error == null) return null;
-    return error!.message ?? 'Đăng nhập thất bại';
+  void setLoading(bool value) {
+    state = state.copyWith(isLoading: value);
+    _notifyListeners();
   }
 }

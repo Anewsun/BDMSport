@@ -4,7 +4,10 @@ import 'package:bdm_sport/core/widgets/search_box.dart';
 import 'package:bdm_sport/navigation/bottom_nav_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/auth/auth_provider.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../core/auth/auth_repository.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -62,13 +65,42 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   int currentPage = 1;
   int get totalPages => (courts.length / 6).ceil();
+  bool _hasShownToast = false;
+
+  @override
+  void initState() {
+    super.initState();
+    ref.read(currentUserProvider.future);
+  }
 
   @override
   Widget build(BuildContext context) {
+    final loginSuccess = GoRouterState.of(
+      context,
+    ).uri.queryParameters['loginSuccess'];
+
+    if (!_hasShownToast && loginSuccess == 'true') {
+      Future.delayed(Duration.zero, () {
+        Fluttertoast.showToast(
+          msg: 'Đăng nhập thành công!',
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.green,
+          textColor: Colors.white,
+          fontSize: 18,
+        );
+      });
+      _hasShownToast = true;
+    }
+
+    final userAsync = ref.watch(currentUserProvider);
     final paginatedCourts = courts.skip((currentPage - 1) * 6).take(6).toList();
 
-    final authState = ref.watch(authProvider);
-    final userName = authState.user?.name ?? 'Khách';
+    final userName = userAsync.when(
+      loading: () => 'Khách',
+      error: (_, __) => 'Khách',
+      data: (user) => user?.name ?? 'Khách',
+    );
 
     return BottomNavBar(
       child: Scaffold(

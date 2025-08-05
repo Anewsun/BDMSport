@@ -1,3 +1,4 @@
+import 'package:bdm_sport/features/auth/controllers/sign_in_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -5,7 +6,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/widgets/input_field.dart';
 import '../../../core/widgets/password_field.dart';
-import '../controllers/sign_in_controller.dart';
 
 class SignInForm extends ConsumerStatefulWidget {
   final GlobalKey<FormState> formKey;

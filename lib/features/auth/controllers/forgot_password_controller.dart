@@ -11,7 +11,7 @@ class ForgotPasswordController {
 
   Future<void> sendResetPasswordEmail(String email) async {
     try {
-      await _authRepository.auth.sendPasswordResetEmail(email: email);
+      await _authRepository.sendPasswordResetEmail(email);
       Fluttertoast.showToast(
         msg:
             "Email đặt lại mật khẩu đã được gửi đến $email.",

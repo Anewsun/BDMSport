@@ -27,30 +27,30 @@ class SignUpController {
 
       if (!context.mounted) return;
 
-      showDialog(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: const Text('Đăng ký thành công'),
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
           content: Text(
-            'Một email xác minh đã được gửi đến $email. '
-            'Vui lòng kiểm tra hộp thư và xác minh email trước khi đăng nhập.',
+            'Đăng ký thành công! Email xác minh đã được gửi đến $email',
           ),
-          actions: [
-            TextButton(
-              onPressed: () => context.go('/sign-in'),
-              child: const Text('Đã hiểu'),
-            ),
-          ],
+          duration: const Duration(seconds: 3),
         ),
       );
+
+      Future.delayed(const Duration(seconds: 2), () {
+        if (context.mounted) context.go('/sign-in');
+      });
     } on FirebaseAuthException catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(getFriendlyErrorMessage(e))));
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(getFriendlyErrorMessage(e))));
+      }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Lỗi đăng ký: ${e.toString()}')));
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Lỗi đăng ký: ${e.toString()}')));
+      }
     }
   }
 }
