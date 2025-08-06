@@ -29,17 +29,17 @@ final routerProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
-      GoRoute(path: '/sign-in', builder: (_, __) => const SignInScreen()),
-      GoRoute(path: '/sign-up', builder: (_, __) => const SignUpScreen()),
-      GoRoute(path: '/send-email', builder: (_, __) => const SendEmailScreen()),
-      GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen()),
-      GoRoute(path: '/contact', builder: (_, __) => const ContactScreen()),
+      GoRoute(path: '/sign-in', builder: (_, _) => const SignInScreen()),
+      GoRoute(path: '/sign-up', builder: (_, _) => const SignUpScreen()),
+      GoRoute(path: '/send-email', builder: (_, _) => const SendEmailScreen()),
+      GoRoute(path: '/profile', builder: (_, _) => const ProfileScreen()),
+      GoRoute(path: '/contact', builder: (_, _) => const ContactScreen()),
       GoRoute(path: '/privacy', builder: (_, _) => const PrivacyPolicyScreen()),
       ShellRoute(
-        builder: (_, __, child) => BottomNavBar(child: child),
+        builder: (_, _, child) => BottomNavBar(child: child),
         routes: [
-          GoRoute(path: '/home', builder: (_, __) => const HomeScreen()),
-          GoRoute(path: '/setting', builder: (_, __) => const SettingScreen()),
+          GoRoute(path: '/home', builder: (_, _) => const HomeScreen()),
+          GoRoute(path: '/setting', builder: (_, _) => const SettingScreen()),
         ],
       ),
     ],

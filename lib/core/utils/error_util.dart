@@ -10,7 +10,7 @@ String getFriendlyErrorMessage(dynamic error) {
       case 'weak-password':
         return 'Mật khẩu quá yếu. Phải có ít nhất 6 ký tự.';
       case 'invalid-credential':
-        return 'Tài khoản hoặc mật khẩu không đúng.';
+        return 'Thông tin đăng nhập không hợp lệ hoặc đã hết hạn.';
       case 'too-many-requests':
         return 'Đăng nhập quá nhiều lần. Vui lòng thử lại sau';
       case 'network-request-failed':
@@ -21,6 +21,8 @@ String getFriendlyErrorMessage(dynamic error) {
         return 'Vui lòng nhập email';
       case 'missing-password':
         return 'Vui lòng nhập mật khẩu';
+      case 'account-exists-with-different-credential':
+        return 'Email này đã được sử dụng với phương thức đăng nhập khác.';
       default:
         return 'Đã xảy ra lỗi không xác định.';
     }

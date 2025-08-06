@@ -6,8 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:go_router/go_router.dart';
-
-import '../../../core/auth/auth_repository.dart';
+import '../../auth/controllers/sign_in_controller.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -68,19 +67,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   bool _hasShownToast = false;
 
   @override
-  void initState() {
-    super.initState();
-    ref.read(currentUserProvider.future);
-  }
-
-  @override
   Widget build(BuildContext context) {
+  final authState = ref.watch(signInControllerProvider);
+    final userName = authState.user?.name ?? 'Khách';
+
     final loginSuccess = GoRouterState.of(
       context,
     ).uri.queryParameters['loginSuccess'];
-
     if (!_hasShownToast && loginSuccess == 'true') {
-      Future.delayed(Duration.zero, () {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
         Fluttertoast.showToast(
           msg: 'Đăng nhập thành công!',
           toastLength: Toast.LENGTH_SHORT,
@@ -93,14 +88,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       _hasShownToast = true;
     }
 
-    final userAsync = ref.watch(currentUserProvider);
-    final paginatedCourts = courts.skip((currentPage - 1) * 6).take(6).toList();
+    ref.listen(signInControllerProvider, (previous, next) {
+      if (previous?.user != next.user && mounted) {
+        setState(() {});
+      }
+    });
 
-    final userName = userAsync.when(
-      loading: () => 'Khách',
-      error: (_, __) => 'Khách',
-      data: (user) => user?.name ?? 'Khách',
-    );
+    final paginatedCourts = courts.skip((currentPage - 1) * 6).take(6).toList();
 
     return BottomNavBar(
       child: Scaffold(

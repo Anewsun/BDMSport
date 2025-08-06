@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../core/auth/auth_repository.dart';
 import '../../../core/models/user_model.dart';
 
 class AuthState {
@@ -95,6 +96,46 @@ class SignInController extends Notifier<AuthState> implements Listenable {
     await FirebaseAuth.instance.signOut();
     state = const AuthState();
     _notifyListeners();
+  }
+
+  Future<bool> loginWithGoogle() async {
+    try {
+      state = state.copyWith(isLoading: true, error: null);
+      _notifyListeners();
+
+      final authRepo = ref.read(authRepositoryProvider);
+      final user = await authRepo.signInWithGoogle();
+
+      if (user != null) {
+        await _syncUserState();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      state = state.copyWith(error: e, isLoading: false);
+      _notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> loginWithFacebook() async {
+    try {
+      state = state.copyWith(isLoading: true, error: null);
+      _notifyListeners();
+
+      final authRepo = ref.read(authRepositoryProvider);
+      final user = await authRepo.signInWithFacebook();
+
+      if (user != null) {
+        await _syncUserState();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      state = state.copyWith(error: e, isLoading: false);
+      _notifyListeners();
+      return false;
+    }
   }
 
   void setLoading(bool value) {

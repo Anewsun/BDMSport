@@ -49,9 +49,15 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
     _formKey.currentState?.save();
 
-    try {
+    handleAuthAction(() async {
       final controller = ref.read(signInControllerProvider.notifier);
-      final success = await controller.login(email, password);
+      return await controller.login(email, password);
+    });
+  }
+
+  Future<void> handleAuthAction(Future<bool> Function() authFunction) async {
+    try {
+      final success = await authFunction();
 
       if (!mounted) return;
 
@@ -69,7 +75,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         );
       }
     } catch (e, st) {
-      print('==> Error in handleLogin: $e');
+      print('==> Error in auth action: $e');
       print(st);
 
       Fluttertoast.showToast(
@@ -107,10 +113,18 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
               const SignInDivider(),
               SocialLogin(
                 onGooglePress: () {
-                  // TODO: Google login
+                  handleAuthAction(
+                    () => ref
+                        .read(signInControllerProvider.notifier)
+                        .loginWithGoogle(),
+                  );
                 },
                 onFacebookPress: () {
-                  // TODO: Facebook login
+                  handleAuthAction(
+                    () => ref
+                        .read(signInControllerProvider.notifier)
+                        .loginWithFacebook(),
+                  );
                 },
               ),
               const SignInFooter(),
