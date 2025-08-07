@@ -1,14 +1,19 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../models/user_model.dart';
 
+enum AuthStatus { authenticated, unauthenticated }
+
 class AuthRepository {
   final FirebaseAuth _auth;
   final FirebaseFirestore _firestore;
   final FacebookAuth _facebookAuth;
+
+  FirebaseFirestore get firestore => _firestore;
 
   AuthRepository({
     FirebaseAuth? firebaseAuth,
@@ -301,4 +306,20 @@ final emailVerificationProvider = StreamProvider.autoDispose((ref) {
 
 final currentUserProvider = FutureProvider<UserModel?>((ref) async {
   return ref.read(authRepositoryProvider).getCurrentUser();
+});
+
+final authStatusNotifierProvider = Provider<ValueNotifier<AuthStatus>>((ref) {
+  final notifier = ValueNotifier<AuthStatus>(AuthStatus.unauthenticated);
+  final authRepo = ref.read(authRepositoryProvider);
+
+  FirebaseAuth.instance.authStateChanges().listen((user) async {
+    if (user != null) {
+      await authRepo.getCurrentUser();
+    }
+    notifier.value = user == null
+        ? AuthStatus.unauthenticated
+        : AuthStatus.authenticated;
+  });
+
+  return notifier;
 });

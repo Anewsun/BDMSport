@@ -1,5 +1,3 @@
-import 'package:bdm_sport/core/widgets/court_card.dart';
-import 'package:bdm_sport/core/widgets/popular_location_card.dart';
 import 'package:bdm_sport/core/widgets/search_box.dart';
 import 'package:bdm_sport/navigation/bottom_nav_bar.dart';
 import 'package:flutter/material.dart';
@@ -7,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:go_router/go_router.dart';
 import '../../auth/controllers/sign_in_controller.dart';
+import '../widgets/discounted_courts_section.dart';
+import '../widgets/popular_locations_section.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -68,7 +68,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-  final authState = ref.watch(signInControllerProvider);
+    final authState = ref.watch(signInControllerProvider);
     final userName = authState.user?.name ?? 'Khách';
 
     final loginSuccess = GoRouterState.of(
@@ -93,8 +93,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         setState(() {});
       }
     });
-
-    final paginatedCourts = courts.skip((currentPage - 1) * 6).take(6).toList();
 
     return BottomNavBar(
       child: Scaffold(
@@ -170,135 +168,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   child: SearchBox(),
                 ),
 
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(15, 25, 15, 10),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.emoji_events, color: Color(0xFFFFD700)),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Địa điểm có nhiều sân nhất',
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'Times New Roman',
-                          color: Color(0xFFFFD700),
-                          shadows: [
-                            Shadow(
-                              blurRadius: 6,
-                              color: Colors.brown,
-                              offset: Offset(1, 1),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+                PopularLocationsSection(popularLocations: popularLocations),
+                DiscountedCourtsSection(
+                  courts: courts,
+                  currentPage: currentPage,
+                  totalPages: totalPages,
+                  onPageChanged: (page) {
+                    setState(() => currentPage = page);
+                  },
                 ),
-
-                SizedBox(
-                  height: 120,
-                  child: ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 15),
-                    scrollDirection: Axis.horizontal,
-                    itemCount: popularLocations.length,
-                    itemBuilder: (_, index) {
-                      final location = popularLocations[index];
-                      return PopularLocationCard(
-                        imageUrl: location['imageUrl'],
-                        name: location['name'],
-                        courtCount: location['courtCount'],
-                        onTap: () {},
-                      );
-                    },
-                  ),
-                ),
-
-                Container(
-                  color: Colors.black.withOpacity(0.02),
-                  padding: const EdgeInsets.fromLTRB(15, 25, 15, 10),
-                  child: Text(
-                    'Sân đang có giảm giá',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'Times New Roman',
-                      foreground: Paint()
-                        ..shader = const LinearGradient(
-                          colors: [Colors.red, Colors.yellow, Colors.orange],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ).createShader(const Rect.fromLTWH(0, 0, 250, 40)),
-                      shadows: [
-                        Shadow(
-                          blurRadius: 4,
-                          color: Colors.black.withOpacity(0.6),
-                          offset: const Offset(1, 1),
-                        ),
-                        Shadow(
-                          blurRadius: 10,
-                          color: Colors.red,
-                          offset: Offset.zero,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 15),
-                  child: GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: paginatedCourts.length,
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          mainAxisSpacing: 10,
-                          crossAxisSpacing: 10,
-                          childAspectRatio: 0.55,
-                        ),
-                    itemBuilder: (_, index) {
-                      final court = paginatedCourts[index];
-                      return CourtCard(
-                        court: court,
-                        onTap: () {},
-                        isFavorite: false,
-                        onToggleFavorite: () {},
-                        showDiscountBadge: true,
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(
-                    totalPages,
-                    (index) => Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 5),
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: currentPage == index + 1
-                              ? const Color(0xFF1167B1)
-                              : Colors.grey,
-                        ),
-                        onPressed: () {
-                          setState(() => currentPage = index + 1);
-                        },
-                        child: Text(
-                          '${index + 1}',
-                          style: const TextStyle(
-                            fontFamily: 'Times New Roman',
-                            color: Colors.white,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 80),
               ],
             ),
           ),

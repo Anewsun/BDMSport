@@ -24,6 +24,14 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   bool showPassword = false;
   bool _autoValidate = false;
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(signInControllerProvider.notifier).initializeAuthState();
+    });
+  }
+
   void toggleShowPassword() {
     setState(() {
       showPassword = !showPassword;
@@ -62,33 +70,36 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       if (!mounted) return;
 
       if (success) {
+        await ref.read(signInControllerProvider.notifier).syncUserState();
+        if (!mounted) return;
+
         GoRouter.of(context).go('/home?loginSuccess=true');
       } else {
+        if (!mounted) return;
         final currentError = ref.read(signInControllerProvider).error;
-        Fluttertoast.showToast(
-          msg: getFriendlyErrorMessage(currentError ?? "Đăng nhập thất bại"),
-          toastLength: Toast.LENGTH_LONG,
-          gravity: ToastGravity.BOTTOM,
-          backgroundColor: Colors.red,
-          textColor: Colors.white,
-          fontSize: 16.0,
-        );
+        _showErrorToast(currentError ?? "Đăng nhập thất bại");
       }
     } catch (e, st) {
-      print('==> Error in auth action: $e');
-      print(st);
-
-      Fluttertoast.showToast(
-        msg: getFriendlyErrorMessage(e),
-        toastLength: Toast.LENGTH_LONG,
-        gravity: ToastGravity.BOTTOM,
-        backgroundColor: Colors.red,
-        textColor: Colors.white,
-        fontSize: 16.0,
-      );
+      debugPrint('==> Error in auth action: $e\n$st');
+      if (mounted) {
+        _showErrorToast(e);
+      }
     } finally {
-      ref.read(signInControllerProvider.notifier).setLoading(false);
+      if (mounted) {
+        ref.read(signInControllerProvider.notifier).setLoading(false);
+      }
     }
+  }
+
+  void _showErrorToast(dynamic error) {
+    Fluttertoast.showToast(
+      msg: getFriendlyErrorMessage(error),
+      toastLength: Toast.LENGTH_LONG,
+      gravity: ToastGravity.BOTTOM,
+      backgroundColor: Colors.red,
+      textColor: Colors.white,
+      fontSize: 16.0,
+    );
   }
 
   @override

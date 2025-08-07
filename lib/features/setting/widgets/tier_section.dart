@@ -3,9 +3,20 @@ import '../../../core/utils/formatters.dart';
 
 class TierSection extends StatelessWidget {
   final String tier;
-  final int balance;
+  final double balance;
 
   const TierSection({super.key, required this.tier, required this.balance});
+
+  String getVietnameseTier() {
+    switch (tier) {
+      case 'Gold':
+        return 'Vàng';
+      case 'Silver':
+        return 'Bạc';
+      default:
+        return 'Đồng';
+    }
+  }
 
   Color getTierColor() {
     switch (tier) {
@@ -31,6 +42,8 @@ class TierSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final vietnameseTier = getVietnameseTier();
+
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.symmetric(vertical: 16),
@@ -51,7 +64,7 @@ class TierSection extends StatelessWidget {
           Text(getTierIcon(), style: const TextStyle(fontSize: 32)),
           const SizedBox(height: 8),
           Text(
-            tier,
+            vietnameseTier,
             style: const TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,

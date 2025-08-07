@@ -1,9 +1,13 @@
+import 'dart:io';
 import 'package:bdm_sport/features/auth/controllers/sign_in_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../core/widgets/custom_header.dart';
+import '../controllers/setting_controller.dart';
+import '../widgets/image_viewer_dialog.dart';
 
 class SettingScreen extends ConsumerStatefulWidget {
   const SettingScreen({super.key});
@@ -19,6 +23,33 @@ class _SettingScreenState extends ConsumerState<SettingScreen> {
     {'title': 'Chính sách bảo mật', 'icon': Feather.lock},
     {'title': 'Đăng xuất', 'icon': Feather.log_out},
   ];
+
+  Future<void> _pickAndUpdateImage() async {
+    final currentUser = ref.read(signInControllerProvider).user;
+    if (currentUser == null) {
+      return;
+    }
+
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null && mounted) {
+      try {
+        await ref
+            .read(settingControllerProvider.notifier)
+            .updateAvatar(File(pickedFile.path), currentUser.id);
+
+      await ref.read(signInControllerProvider.notifier).syncUserState();
+      } catch (_) {}
+    }
+  }
+
+  void _showImageDialog(String imageUrl) {
+    showDialog(
+      context: context,
+      builder: (context) => ImageViewerDialog(imageUrl: imageUrl),
+    );
+  }
 
   void handleMenuTap(String title) async {
     if (title == 'Đăng xuất') {
@@ -119,6 +150,7 @@ class _SettingScreenState extends ConsumerState<SettingScreen> {
   @override
   Widget build(BuildContext context) {
     final currentUser = ref.watch(signInControllerProvider).user;
+    final settingAsync = ref.watch(settingControllerProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xfff0f4ff),
@@ -136,33 +168,50 @@ class _SettingScreenState extends ConsumerState<SettingScreen> {
                 Stack(
                   alignment: Alignment.bottomRight,
                   children: [
-                    CircleAvatar(
-                      radius: 40,
-                      backgroundColor: Colors.white,
-                      backgroundImage: currentUser?.avatar != null
-                          ? NetworkImage(currentUser!.avatar!)
-                          : const AssetImage("assets/images/default-avatar.jpg")
-                                as ImageProvider,
+                    GestureDetector(
+                      onTap: () {
+                        if (currentUser?.avatar != null) {
+                          _showImageDialog(currentUser!.avatar!);
+                        }
+                      },
+                      child: CircleAvatar(
+                        radius: 40,
+                        backgroundColor: Colors.white,
+                        backgroundImage: currentUser?.avatar != null
+                            ? NetworkImage(currentUser!.avatar!)
+                            : const AssetImage(
+                                    "assets/images/default-avatar.jpg",
+                                  )
+                                  as ImageProvider,
+                      ),
                     ),
                     Positioned(
                       bottom: 0,
                       right: 0,
-                      child: Container(
-                        height: 24,
-                        width: 24,
-                        decoration: const BoxDecoration(
-                          color: Color(0xff1167B1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Feather.edit_2,
-                          size: 15,
-                          color: Colors.white,
+                      child: GestureDetector(
+                        onTap: _pickAndUpdateImage,
+                        child: Container(
+                          height: 24,
+                          width: 24,
+                          decoration: const BoxDecoration(
+                            color: Color(0xff1167B1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Feather.edit_2,
+                            size: 15,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     ),
                   ],
                 ),
+                if (settingAsync.isLoading)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 8.0),
+                    child: CircularProgressIndicator(),
+                  ),
                 const SizedBox(height: 10),
                 Text(
                   currentUser?.name ?? 'Khách',

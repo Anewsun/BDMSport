@@ -1,7 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import '../../../core/auth/auth_repository.dart';
 import '../../../core/models/user_model.dart';
 
@@ -25,52 +27,57 @@ final signInControllerProvider = NotifierProvider<SignInController, AuthState>(
   SignInController.new,
 );
 
-class SignInController extends Notifier<AuthState> implements Listenable {
-  final List<VoidCallback> _listeners = [];
-
+class SignInController extends Notifier<AuthState> {
   @override
-  AuthState build() => const AuthState();
-
-  @override
-  void addListener(VoidCallback listener) {
-    _listeners.add(listener);
+  AuthState build() {
+    return const AuthState(isLoading: false);
   }
 
-  @override
-  void removeListener(VoidCallback listener) {
-    _listeners.remove(listener);
-  }
-
-  void _notifyListeners() {
-    for (final listener in _listeners) {
-      listener();
+  Future<void> initializeAuthState() async {
+    state = state.copyWith(isLoading: true);
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        await syncUserState();
+      } else {
+        state = const AuthState(isLoading: false);
+      }
+    } catch (e, st) {
+      state = AuthState(isLoading: false, error: e);
+      debugPrint('Error initializing auth state: $e\n$st');
     }
   }
 
-  Future<void> _syncUserState() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
+  Future<void> syncUserState() async {
+    state = state.copyWith(isLoading: true);
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        state = state.copyWith(user: null, isLoading: false);
+        return;
+      }
+
       final snapshot = await FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
           .get();
 
-      if (snapshot.exists) {
-        final model = UserModel.fromMap(snapshot.data()!);
-        state = state.copyWith(user: model, isLoading: false);
-        _notifyListeners();
+      if (!snapshot.exists) {
+        state = state.copyWith(user: null, isLoading: false);
+        return;
       }
-    } else {
-      state = state.copyWith(user: null, isLoading: false);
-      _notifyListeners();
+
+      final model = UserModel.fromMap(snapshot.data()!..['id'] = snapshot.id);
+      state = state.copyWith(user: model, isLoading: false);
+    } catch (e, st) {
+      state = state.copyWith(error: e, isLoading: false);
+      debugPrint('Error syncing user state: $e\n$st');
     }
   }
 
   Future<bool> login(String email, String password) async {
+    state = state.copyWith(isLoading: true, error: null);
     try {
-      state = state.copyWith(isLoading: true, error: null);
-      _notifyListeners();
-
       final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
         password: password,
@@ -83,63 +90,73 @@ class SignInController extends Notifier<AuthState> implements Listenable {
         );
       }
 
-      await _syncUserState();
+      await syncUserState();
       return true;
     } on FirebaseAuthException catch (e) {
       state = state.copyWith(error: e, isLoading: false);
-      _notifyListeners();
+      return false;
+    } catch (e, st) {
+      state = state.copyWith(error: e, isLoading: false);
+      debugPrint('Login error: $e\n$st');
       return false;
     }
   }
 
   Future<void> signOut() async {
-    await FirebaseAuth.instance.signOut();
-    state = const AuthState();
-    _notifyListeners();
+    state = state.copyWith(isLoading: true);
+    try {
+      await FirebaseAuth.instance.signOut();
+      await GoogleSignIn.instance.signOut();
+      await FacebookAuth.instance.logOut();
+
+      state = const AuthState(isLoading: false);
+    } catch (e, st) {
+      state = AuthState(isLoading: false, error: e);
+      debugPrint('Sign out error: $e\n$st');
+    }
   }
 
   Future<bool> loginWithGoogle() async {
+    state = state.copyWith(isLoading: true, error: null);
     try {
-      state = state.copyWith(isLoading: true, error: null);
-      _notifyListeners();
-
       final authRepo = ref.read(authRepositoryProvider);
       final user = await authRepo.signInWithGoogle();
 
       if (user != null) {
-        await _syncUserState();
+        await syncUserState();
         return true;
       }
       return false;
-    } catch (e) {
+    } catch (e, st) {
       state = state.copyWith(error: e, isLoading: false);
-      _notifyListeners();
+      debugPrint('Google login error: $e\n$st');
       return false;
     }
   }
 
   Future<bool> loginWithFacebook() async {
+    state = state.copyWith(isLoading: true, error: null);
     try {
-      state = state.copyWith(isLoading: true, error: null);
-      _notifyListeners();
-
       final authRepo = ref.read(authRepositoryProvider);
       final user = await authRepo.signInWithFacebook();
 
       if (user != null) {
-        await _syncUserState();
+        await syncUserState();
         return true;
       }
       return false;
-    } catch (e) {
+    } catch (e, st) {
       state = state.copyWith(error: e, isLoading: false);
-      _notifyListeners();
+      debugPrint('Facebook login error: $e\n$st');
       return false;
     }
   }
 
   void setLoading(bool value) {
     state = state.copyWith(isLoading: value);
-    _notifyListeners();
+  }
+
+  void updateUser(UserModel newUser) {
+    state = state.copyWith(user: newUser);
   }
 }
