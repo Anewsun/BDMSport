@@ -2,6 +2,7 @@ import 'package:bdm_sport/core/widgets/input_field.dart';
 import 'package:flutter/material.dart';
 import 'package:bdm_sport/core/widgets/date_time_picker_row.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:go_router/go_router.dart';
 
 class SearchBox extends StatefulWidget {
   const SearchBox({super.key});
@@ -99,7 +100,7 @@ class _SearchBoxState extends State<SearchBox> {
                 "Địa điểm",
                 style: TextStyle(
                   fontSize: 16,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.bold,
                   fontFamily: 'Times New Roman',
                 ),
               ),
@@ -107,9 +108,9 @@ class _SearchBoxState extends State<SearchBox> {
             const SizedBox(height: 8),
             InputField(
               icon: FontAwesomeIcons.locationDot,
+              iconColor: Colors.blue,
               placeholder: 'Nhập tên, địa điểm',
             ),
-
             const SizedBox(height: 16),
             DateTimePickerRow(
               label: "Thời điểm nhận sân",
@@ -129,7 +130,7 @@ class _SearchBoxState extends State<SearchBox> {
 
             ElevatedButton(
               onPressed: () {
-                // TODO: Handle search later
+                context.push('/search-results');
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF1167B1),

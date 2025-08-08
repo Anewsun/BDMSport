@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/widgets/court_card.dart';
+import '../../../core/widgets/pagination_controls.dart';
 
 class DiscountedCourtsSection extends StatelessWidget {
   final List<Map<String, dynamic>> courts;
@@ -22,7 +23,6 @@ class DiscountedCourtsSection extends StatelessWidget {
     return Column(
       children: [
         Container(
-          color: Colors.black.withOpacity(0.02),
           padding: const EdgeInsets.fromLTRB(15, 25, 15, 10),
           child: Text(
             'Sân đang có giảm giá',
@@ -39,7 +39,7 @@ class DiscountedCourtsSection extends StatelessWidget {
               shadows: [
                 Shadow(
                   blurRadius: 4,
-                  color: Colors.black.withOpacity(0.6),
+                  color: Color.fromRGBO(0, 0, 0, 0.8),
                   offset: const Offset(1, 1),
                 ),
                 Shadow(blurRadius: 10, color: Colors.red, offset: Offset.zero),
@@ -72,34 +72,12 @@ class DiscountedCourtsSection extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 20),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(
-            totalPages,
-            (index) => Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 5),
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: currentPage == index + 1
-                      ? const Color(0xFF1167B1)
-                      : Colors.grey,
-                ),
-                onPressed: () {
-                  onPageChanged(index + 1);
-                },
-                child: Text(
-                  '${index + 1}',
-                  style: const TextStyle(
-                    fontFamily: 'Times New Roman',
-                    color: Colors.white,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ),
-            ),
-          ),
+        PaginationControls(
+          currentPage: currentPage,
+          totalPages: totalPages,
+          onPageChanged: onPageChanged,
         ),
-        const SizedBox(height: 80),
+        const SizedBox(height: 60),
       ],
     );
   }

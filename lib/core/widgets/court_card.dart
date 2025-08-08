@@ -45,7 +45,7 @@ class CourtCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(10),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Color.fromRGBO(0, 0, 0, 0.1),
               offset: const Offset(0, 2),
               blurRadius: 4,
             ),
@@ -130,7 +130,7 @@ class CourtCard extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 15,
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -147,7 +147,7 @@ class CourtCard extends StatelessWidget {
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            fontSize: 14,
+                            fontSize: 15,
                             color: Colors.black,
                           ),
                         ),
@@ -173,7 +173,7 @@ class CourtCard extends StatelessWidget {
                                 (discountedPrice ?? lowestPrice) ?? 0,
                               ),
                               style: const TextStyle(
-                                fontSize: 14,
+                                fontSize: 15,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.lightBlue,
                               ),

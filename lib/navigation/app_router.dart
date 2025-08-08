@@ -4,7 +4,9 @@ import '../core/auth/auth_repository.dart';
 import '../features/auth/screens/sign_in_screen.dart';
 import '../features/auth/screens/sign_up_screen.dart';
 import '../features/auth/screens/send_email_screen.dart';
+import '../features/home/screens/filter_screen.dart';
 import '../features/home/screens/home_screen.dart';
+import '../features/home/screens/search_result_screen.dart';
 import '../features/setting/screens/contact_screen.dart';
 import '../features/setting/screens/privacy_policy_screen.dart';
 import '../features/setting/screens/setting_screen.dart';
@@ -38,6 +40,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/profile', builder: (_, _) => const ProfileScreen()),
       GoRoute(path: '/contact', builder: (_, _) => const ContactScreen()),
       GoRoute(path: '/privacy', builder: (_, _) => const PrivacyPolicyScreen()),
+      GoRoute(path: '/filter', builder: (_, _) => const FilterScreen()),
+      GoRoute(path: '/search-results', builder: (_, _) => const SearchResultScreen()),
       ShellRoute(
         builder: (_, _, child) => BottomNavBar(child: child),
         routes: [

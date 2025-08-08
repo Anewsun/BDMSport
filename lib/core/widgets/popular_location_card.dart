@@ -33,7 +33,7 @@ class PopularLocationCard extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
-            color: Colors.black.withOpacity(0.4),
+            color: Color.fromRGBO(0, 0, 0, 0.4),
           ),
           padding: const EdgeInsets.all(8),
           alignment: Alignment.bottomLeft,

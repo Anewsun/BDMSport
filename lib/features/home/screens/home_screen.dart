@@ -48,7 +48,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   ];
 
   final List<Map<String, dynamic>> courts = List.generate(
-    8,
+    35,
     (index) => {
       '_id': '$index',
       'name': 'Sân cầu lông ${index + 1}',
@@ -63,7 +63,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   );
 
   int currentPage = 1;
-  int get totalPages => (courts.length / 6).ceil();
+  final int itemsPerPage = 6;
+  int get totalPages => (courts.length / itemsPerPage).ceil();
+
+  List<Map<String, dynamic>> get currentPageCourts {
+    final startIndex = (currentPage - 1) * itemsPerPage;
+    final endIndex = startIndex + itemsPerPage;
+    return courts.sublist(
+      startIndex,
+      endIndex > courts.length ? courts.length : endIndex,
+    );
+  }
+
   bool _hasShownToast = false;
 
   @override
@@ -99,8 +110,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         backgroundColor: const Color(0xFFF0F4FF),
         body: SafeArea(
           child: RefreshIndicator(
-            onRefresh: () async =>
-                Future.delayed(const Duration(milliseconds: 500)),
+            onRefresh: () async {
+              setState(() {
+                currentPage = 1;
+              });
+              return Future.delayed(const Duration(milliseconds: 500));
+            },
             child: ListView(
               children: [
                 Padding(

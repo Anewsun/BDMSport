@@ -4,6 +4,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 class InputField extends StatefulWidget {
   final String placeholder;
   final IconData icon;
+  final Color? iconColor;
   final String? value;
   final Function(String)? onChanged;
   final Function(String?)? onSaved;
@@ -14,6 +15,7 @@ class InputField extends StatefulWidget {
     super.key,
     required this.placeholder,
     required this.icon,
+    this.iconColor,
     this.value,
     this.onChanged,
     this.onSaved,
@@ -45,7 +47,7 @@ class _InputFieldState extends State<InputField> {
           ),
           child: Row(
             children: [
-              FaIcon(widget.icon, size: 20, color: Colors.black),
+              FaIcon(widget.icon, size: 20, color: widget.iconColor ?? Colors.black),
               const SizedBox(width: 8),
               Expanded(
                 child: TextFormField(
@@ -75,7 +77,7 @@ class _InputFieldState extends State<InputField> {
                     focusedErrorBorder: InputBorder.none,
                     errorStyle: const TextStyle(height: 0),
                   ),
-                  style: const TextStyle(color: Colors.black, fontSize: 18),
+                  style: const TextStyle(color: Colors.black, fontSize: 17),
                 ),
               ),
             ],
