@@ -1,23 +1,19 @@
-import 'package:bdm_sport/core/widgets/input_field.dart';
 import 'package:flutter/material.dart';
 import 'package:bdm_sport/core/widgets/date_time_picker_row.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:go_router/go_router.dart';
-import 'search_box_container.dart';
+import 'package:bdm_sport/core/widgets/search_box_container.dart';
 
-class SearchBox extends StatefulWidget {
-  const SearchBox({super.key});
+class AreaSearchBox extends StatefulWidget {
+  const AreaSearchBox({super.key});
 
   @override
-  State<SearchBox> createState() => _SearchBoxState();
+  State<AreaSearchBox> createState() => _AreaSearchBoxState();
 }
 
-class _SearchBoxState extends State<SearchBox> {
-  final TextEditingController locationController = TextEditingController();
+class _AreaSearchBoxState extends State<AreaSearchBox> {
   DateTime checkInDate = DateTime.now();
-  DateTime checkOutDate = DateTime.now();
+  DateTime checkOutDate = DateTime.now().add(const Duration(days: 1));
 
-  void openDatePicker(bool isCheckIn) async {
+  void _openDatePicker(bool isCheckIn) async {
     DateTime initialDate = isCheckIn ? checkInDate : checkOutDate;
     final picked = await showDatePicker(
       context: context,
@@ -37,6 +33,10 @@ class _SearchBoxState extends State<SearchBox> {
             checkInDate.hour,
             checkInDate.minute,
           );
+          if (checkOutDate.isBefore(checkInDate) ||
+              checkOutDate.isAtSameMomentAs(checkInDate)) {
+            checkOutDate = checkInDate.add(const Duration(hours: 1));
+          }
         } else {
           checkOutDate = DateTime(
             picked.year,
@@ -50,7 +50,7 @@ class _SearchBoxState extends State<SearchBox> {
     }
   }
 
-  void openTimePicker(bool isCheckIn) async {
+  void _openTimePicker(bool isCheckIn) async {
     final initialTime = TimeOfDay.fromDateTime(
       isCheckIn ? checkInDate : checkOutDate,
     );
@@ -69,6 +69,10 @@ class _SearchBoxState extends State<SearchBox> {
             picked.hour,
             picked.minute,
           );
+          if (checkOutDate.isBefore(checkInDate) ||
+              checkOutDate.isAtSameMomentAs(checkInDate)) {
+            checkOutDate = checkInDate.add(const Duration(hours: 1));
+          }
         } else {
           checkOutDate = DateTime(
             checkOutDate.year,
@@ -86,41 +90,24 @@ class _SearchBoxState extends State<SearchBox> {
   Widget build(BuildContext context) {
     return SearchBoxContainer(
       children: [
-        const Align(
-          alignment: Alignment.centerLeft,
-          child: Text(
-            "Địa điểm",
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Times New Roman',
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        InputField(
-          icon: FontAwesomeIcons.locationDot,
-          iconColor: Colors.blue,
-          placeholder: 'Nhập tên, địa điểm',
-        ),
-        const SizedBox(height: 16),
         DateTimePickerRow(
-          label: "Thời điểm nhận sân",
+          label: "Nhận sân",
           dateTime: checkInDate,
-          onDateTap: () => openDatePicker(true),
-          onTimeTap: () => openTimePicker(true),
+          onDateTap: () => _openDatePicker(true),
+          onTimeTap: () => _openTimePicker(true),
         ),
         const SizedBox(height: 16),
         DateTimePickerRow(
-          label: "Thời điểm trả sân",
+          label: "Trả sân",
           dateTime: checkOutDate,
-          onDateTap: () => openDatePicker(false),
-          onTimeTap: () => openTimePicker(false),
+          onDateTap: () => _openDatePicker(false),
+          onTimeTap: () => _openTimePicker(false),
         ),
         const SizedBox(height: 20),
         ElevatedButton(
           onPressed: () {
-            context.push('/search-results');
+            debugPrint('Nhận sân: ${checkInDate.toString()}');
+            debugPrint('Trả sân: ${checkOutDate.toString()}');
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF1167B1),
@@ -128,15 +115,14 @@ class _SearchBoxState extends State<SearchBox> {
               borderRadius: BorderRadius.circular(30),
             ),
             padding: const EdgeInsets.symmetric(vertical: 14),
+            minimumSize: const Size(double.infinity, 0),
           ),
-          child: const Center(
-            child: Text(
-              'Tìm kiếm',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+          child: const Text(
+            'Tìm kiếm',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
             ),
           ),
         ),

@@ -142,13 +142,15 @@ class CourtCard extends StatelessWidget {
                           color: Colors.redAccent,
                         ),
                         const SizedBox(width: 5),
-                        Text(
-                          address,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            color: Colors.black,
+                        Expanded(
+                          child: Text(
+                            address,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              color: Colors.black,
+                            ),
                           ),
                         ),
                       ],

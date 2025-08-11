@@ -11,6 +11,8 @@ import '../features/setting/screens/contact_screen.dart';
 import '../features/setting/screens/privacy_policy_screen.dart';
 import '../features/setting/screens/setting_screen.dart';
 import '../features/setting/screens/profile_screen.dart';
+import '../features/favorite/screens/favorite_screen.dart';
+import '../features/home/screens/court_detail_screen.dart';
 import 'bottom_nav_bar.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -42,11 +44,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/privacy', builder: (_, _) => const PrivacyPolicyScreen()),
       GoRoute(path: '/filter', builder: (_, _) => const FilterScreen()),
       GoRoute(path: '/search-results', builder: (_, _) => const SearchResultScreen()),
+      GoRoute(path: '/court-detail', builder: (_, _) => const CourtDetailScreen()),
       ShellRoute(
         builder: (_, _, child) => BottomNavBar(child: child),
         routes: [
           GoRoute(path: '/home', builder: (_, _) => const HomeScreen()),
           GoRoute(path: '/setting', builder: (_, _) => const SettingScreen()),
+          GoRoute(path: '/favorite', builder: (_, _) => const FavoriteScreen()),
         ],
       ),
     ],

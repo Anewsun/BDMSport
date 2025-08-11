@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/widgets/court_card.dart';
 import '../../../core/widgets/pagination_controls.dart';
 
@@ -63,7 +64,9 @@ class DiscountedCourtsSection extends StatelessWidget {
               final court = paginatedCourts[index];
               return CourtCard(
                 court: court,
-                onTap: () {},
+                onTap: () {
+                  context.push('/court-detail');
+                },
                 isFavorite: false,
                 onToggleFavorite: () {},
                 showDiscountBadge: true,

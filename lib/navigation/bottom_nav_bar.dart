@@ -20,19 +20,19 @@ class BottomNavBar extends StatelessWidget {
     switch (index) {
       case 0:
         context.go('/home');
-        break;
+        return;
       case 1:
         context.go('/favorite');
-        break;
+        return;
       case 2:
         context.go('/booking');
-        break;
+        return;
       case 3:
         context.go('/chats');
-        break;
+        return;
       case 4:
         context.go('/setting');
-        break;
+        return;
     }
   }
 
