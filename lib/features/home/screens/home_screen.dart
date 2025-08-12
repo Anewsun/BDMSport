@@ -6,6 +6,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:go_router/go_router.dart';
 import '../../auth/controllers/sign_in_controller.dart';
 import '../widgets/discounted_courts_section.dart';
+import '../widgets/notification_icon_with_badge.dart';
 import '../widgets/popular_locations_section.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -137,30 +138,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           const Icon(Icons.waving_hand, color: Colors.amber),
                         ],
                       ),
-                      const Stack(
-                        children: [
-                          Icon(
-                            Icons.notifications,
-                            color: Colors.blueGrey,
-                            size: 35,
-                          ),
-                          Positioned(
-                            right: 6,
-                            top: 6,
-                            child: CircleAvatar(
-                              radius: 7,
-                              backgroundColor: Colors.red,
-                              child: Text(
-                                '1',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.white,
-                                  fontFamily: 'Times New Roman',
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
+                      NotificationIconWithBadge(
+                        notificationCount: 3,
+                        onPressed: () {
+                          context.push('/notification');
+                        },
                       ),
                     ],
                   ),

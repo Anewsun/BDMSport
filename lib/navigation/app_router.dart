@@ -8,6 +8,7 @@ import '../features/chat/screens/chat_list_screen.dart';
 import '../features/chat/screens/chat_screen.dart';
 import '../features/home/screens/filter_screen.dart';
 import '../features/home/screens/home_screen.dart';
+import '../features/home/screens/notifications_screen.dart';
 import '../features/home/screens/search_result_screen.dart';
 import '../features/setting/screens/contact_screen.dart';
 import '../features/setting/screens/privacy_policy_screen.dart';
@@ -47,6 +48,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/filter', builder: (_, _) => const FilterScreen()),
       GoRoute(path: '/search-results', builder: (_, _) => const SearchResultScreen()),
       GoRoute(path: '/court-detail', builder: (_, _) => const CourtDetailScreen()),
+      GoRoute(path: '/notification', builder: (_, _) => const NotificationsScreen()),
       GoRoute(
         path: '/chat',
         builder: (_, _) => const ChatScreen(userId: ''),
