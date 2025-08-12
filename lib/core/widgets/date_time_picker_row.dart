@@ -76,7 +76,7 @@ class DateTimePickerRow extends StatelessWidget {
                         color: Colors.lightBlue,
                       ),
                       const SizedBox(width: 8),
-                      Text(formatTime(dateTime.toIso8601String())),
+                      Text(formatTime(dateTime)),
                     ],
                   ),
                 ),

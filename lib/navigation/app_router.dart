@@ -4,6 +4,8 @@ import '../core/auth/auth_repository.dart';
 import '../features/auth/screens/sign_in_screen.dart';
 import '../features/auth/screens/sign_up_screen.dart';
 import '../features/auth/screens/send_email_screen.dart';
+import '../features/chat/screens/chat_list_screen.dart';
+import '../features/chat/screens/chat_screen.dart';
 import '../features/home/screens/filter_screen.dart';
 import '../features/home/screens/home_screen.dart';
 import '../features/home/screens/search_result_screen.dart';
@@ -45,12 +47,17 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/filter', builder: (_, _) => const FilterScreen()),
       GoRoute(path: '/search-results', builder: (_, _) => const SearchResultScreen()),
       GoRoute(path: '/court-detail', builder: (_, _) => const CourtDetailScreen()),
+      GoRoute(
+        path: '/chat',
+        builder: (_, _) => const ChatScreen(userId: ''),
+      ),
       ShellRoute(
         builder: (_, _, child) => BottomNavBar(child: child),
         routes: [
           GoRoute(path: '/home', builder: (_, _) => const HomeScreen()),
           GoRoute(path: '/setting', builder: (_, _) => const SettingScreen()),
           GoRoute(path: '/favorite', builder: (_, _) => const FavoriteScreen()),
+          GoRoute(path: '/chat-list', builder: (_, _) => const ChatListScreen()),
         ],
       ),
     ],

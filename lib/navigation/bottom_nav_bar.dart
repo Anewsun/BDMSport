@@ -11,7 +11,7 @@ class BottomNavBar extends StatelessWidget {
     if (location.startsWith('/home')) return 0;
     if (location.startsWith('/favorite')) return 1;
     if (location.startsWith('/booking')) return 2;
-    if (location.startsWith('/chats')) return 3;
+    if (location.startsWith('/chat-list')) return 3;
     if (location.startsWith('/setting')) return 4;
     return 0;
   }
@@ -28,7 +28,7 @@ class BottomNavBar extends StatelessWidget {
         context.go('/booking');
         return;
       case 3:
-        context.go('/chats');
+        context.go('/chat-list');
         return;
       case 4:
         context.go('/setting');

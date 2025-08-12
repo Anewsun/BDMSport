@@ -13,9 +13,19 @@ String formatDate(DateTime? date) {
 }
 
 // Định dạng giờ: "2025-12-01T17:30:00Z" => "17:30"
-String formatTime(String dateString) {
+String formatTime(dynamic dateTime) {
   try {
-    final date = DateTime.parse(dateString);
+    DateTime date;
+
+    if (dateTime == null) return '--:--';
+    if (dateTime is DateTime) {
+      date = dateTime;
+    } else if (dateTime is String) {
+      date = DateTime.parse(dateTime);
+    } else {
+      return '--:--';
+    }
+
     final hours = date.hour.toString().padLeft(2, '0');
     final minutes = date.minute.toString().padLeft(2, '0');
     return '$hours:$minutes';
