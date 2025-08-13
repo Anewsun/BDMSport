@@ -33,3 +33,24 @@ String formatTime(dynamic dateTime) {
     return '--:--';
   }
 }
+
+// Định dạng ngày tháng bao gồm giờ
+String formatDateTime(DateTime? date) {
+  if (date == null) return '--/--/---- --:--';
+  return DateFormat('dd/MM/yyyy HH:mm').format(date);
+}
+
+// Tính thời lượng chơi
+String formatDuration(DateTime start, DateTime end) {
+  final duration = end.difference(start);
+  final hours = duration.inHours;
+  final minutes = duration.inMinutes.remainder(60);
+
+  if (hours > 0 && minutes > 0) {
+    return '$hours giờ ${minutes}phút';
+  } else if (hours > 0) {
+    return '$hours giờ';
+  } else {
+    return '${minutes}phút';
+  }
+}

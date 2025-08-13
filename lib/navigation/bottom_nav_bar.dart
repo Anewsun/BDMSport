@@ -10,7 +10,7 @@ class BottomNavBar extends StatelessWidget {
     final location = GoRouterState.of(context).uri.toString();
     if (location.startsWith('/home')) return 0;
     if (location.startsWith('/favorite')) return 1;
-    if (location.startsWith('/booking')) return 2;
+    if (location.startsWith('/booking-list')) return 2;
     if (location.startsWith('/chat-list')) return 3;
     if (location.startsWith('/setting')) return 4;
     return 0;
@@ -25,7 +25,7 @@ class BottomNavBar extends StatelessWidget {
         context.go('/favorite');
         return;
       case 2:
-        context.go('/booking');
+        context.go('/booking-list');
         return;
       case 3:
         context.go('/chat-list');

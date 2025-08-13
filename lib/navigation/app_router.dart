@@ -4,6 +4,8 @@ import '../core/auth/auth_repository.dart';
 import '../features/auth/screens/sign_in_screen.dart';
 import '../features/auth/screens/sign_up_screen.dart';
 import '../features/auth/screens/send_email_screen.dart';
+import '../features/booking/screens/booking_detail_screen.dart';
+import '../features/booking/screens/booking_list_screen.dart';
 import '../features/chat/screens/chat_list_screen.dart';
 import '../features/chat/screens/chat_screen.dart';
 import '../features/home/screens/filter_screen.dart';
@@ -49,6 +51,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/search-results', builder: (_, _) => const SearchResultScreen()),
       GoRoute(path: '/court-detail', builder: (_, _) => const CourtDetailScreen()),
       GoRoute(path: '/notification', builder: (_, _) => const NotificationsScreen()),
+      GoRoute(path: '/booking-detail', builder: (_, _) => const BookingDetailScreen(bookingId: '',)),
       GoRoute(
         path: '/chat',
         builder: (_, _) => const ChatScreen(userId: ''),
@@ -60,6 +63,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/setting', builder: (_, _) => const SettingScreen()),
           GoRoute(path: '/favorite', builder: (_, _) => const FavoriteScreen()),
           GoRoute(path: '/chat-list', builder: (_, _) => const ChatListScreen()),
+          GoRoute(path: '/booking-list', builder: (_, _) => const BookingListScreen()),
         ],
       ),
     ],
