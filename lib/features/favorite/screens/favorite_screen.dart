@@ -18,7 +18,7 @@ class FavoriteScreen extends StatelessWidget {
         'lowestPrice': 200000,
         'lowestDiscountedPrice': 180000,
         'highestDiscountPercent': 10,
-        'featuredImageUrl': 'https://example.com/court1.jpg',
+        'featuredImageUrl': 'assets/images/court4.jpg',
       },
       {
         '_id': '2',
@@ -28,7 +28,8 @@ class FavoriteScreen extends StatelessWidget {
         'lowestPrice': 250000,
         'lowestDiscountedPrice': 220000,
         'highestDiscountPercent': 12,
-        'featuredImageUrl': 'https://lh7-us.googleusercontent.com/RpJsZJpUE7GiSnl6q-zehT1zgdRPVzkYRkzBnfvhq3CRQQaLmZzuxDFq2uLRhlgXEOpQusxAbKRLNsOD5ygXGoO0y0hKGA5s3AKz89G957hGLv20SBiwcIgiAzSrCMXCepOlO6pMkokJkzVA1M212tA',
+        'featuredImageUrl':
+            'assets/images/court3.jpg',
       },
     ];
 
@@ -74,21 +75,7 @@ class FavoriteScreen extends StatelessWidget {
                             isFavorite: true,
                             onToggleFavorite: () {},
                             onTap: () {
-                              context.pushNamed(
-                                'court-detail',
-                                pathParameters: {'courtId': court['_id']},
-                                queryParameters: {
-                                  'checkIn': DateTime.now()
-                                      .toIso8601String()
-                                      .split('T')[0],
-                                  'checkOut': DateTime.now()
-                                      .add(const Duration(days: 1))
-                                      .toIso8601String()
-                                      .split('T')[0],
-                                  'capacity': '1',
-                                  'fromSearch': 'false',
-                                },
-                              );
+                              context.push('/court-detail');
                             },
                           );
                         },

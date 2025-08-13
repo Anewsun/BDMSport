@@ -61,7 +61,7 @@ class CourtCard extends StatelessWidget {
                     top: Radius.circular(10),
                   ),
                   child: imageUrl != null && imageUrl.isNotEmpty
-                      ? Image.network(
+                      ? Image.asset(
                           imageUrl,
                           width: double.infinity,
                           height: 150,

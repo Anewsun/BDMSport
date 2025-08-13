@@ -57,7 +57,7 @@ class SearchResultScreenState extends State<SearchResultScreen> {
           'lowestDiscountedPrice': 120000 + index * 10000,
           'highestDiscountPercent': 20,
           'featuredImageUrl':
-              'https://lh7-us.googleusercontent.com/RpJsZJpUE7GiSnl6q-zehT1zgdRPVzkYRkzBnfvhq3CRQQaLmZzuxDFq2uLRhlgXEOpQusxAbKRLNsOD5ygXGoO0y0hKGA5s3AKz89G957hGLv20SBiwcIgiAzSrCMXCepOlO6pMkokJkzVA1M212tA',
+              'assets/images/court2.jpg',
           'rating': 4.0 + (index % 5) * 0.1,
         },
       );
