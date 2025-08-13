@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/utils/formatters.dart';
 
 class CourtSelection extends StatefulWidget {
   final List<Map<String, dynamic>> courts;
@@ -200,7 +201,7 @@ class _CourtSelectionState extends State<CourtSelection> {
                         Padding(
                           padding: const EdgeInsets.only(right: 8.0),
                           child: Text(
-                            '${court['price'].toStringAsFixed(0)} VNĐ',
+                            formatPrice(court['price']),
                             style: const TextStyle(
                               fontSize: 17,
                               color: Colors.grey,
@@ -219,10 +220,10 @@ class _CourtSelectionState extends State<CourtSelection> {
                         ),
                         child: Text(
                           hasDiscount
-                              ? '${court['discountedPrice'].toStringAsFixed(0)} VNĐ/giờ'
-                              : '${court['price'].toStringAsFixed(0)} VNĐ/giờ',
+                              ? '${formatPrice(court['discountedPrice'])}/giờ'
+                              : '${formatPrice(court['price'])}/giờ',
                           style: TextStyle(
-                            fontSize: 18,
+                            fontSize: 17,
                             fontWeight: FontWeight.bold,
                             color: hasDiscount ? Colors.red : Colors.blue,
                           ),
@@ -242,8 +243,8 @@ class _CourtSelectionState extends State<CourtSelection> {
                           child: Text(
                             '-${court['discountPercent']}%',
                             style: const TextStyle(
-                              fontSize: 15,
-                              color: Colors.red,
+                              fontSize: 13,
+                              color: Colors.brown,
                               fontWeight: FontWeight.bold,
                             ),
                           ),

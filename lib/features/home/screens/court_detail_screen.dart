@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/models/court_model.dart';
+import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/review_form_modal.dart';
 import '../widgets/area_search_box.dart';
 import '../widgets/court_header.dart';
@@ -143,7 +144,7 @@ class _CourtDetailScreenState extends State<CourtDetailScreen> {
               child: Column(
                 children: [
                   CourtHeader(court: _mapToCourt(court)),
-        
+
                   Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
@@ -172,7 +173,11 @@ class _CourtDetailScreenState extends State<CourtDetailScreen> {
                         const SizedBox(height: 8),
                         Row(
                           children: [
-                            const Icon(Icons.star, color: Colors.amber, size: 20),
+                            const Icon(
+                              Icons.star,
+                              color: Colors.amber,
+                              size: 20,
+                            ),
                             Text(
                               ' ${court['rating']} (${court['reviewCount']} đánh giá)',
                               style: const TextStyle(fontSize: 16),
@@ -180,7 +185,7 @@ class _CourtDetailScreenState extends State<CourtDetailScreen> {
                           ],
                         ),
                         const SizedBox(height: 16),
-        
+
                         const Text(
                           'Tiện nghi',
                           style: TextStyle(
@@ -214,7 +219,7 @@ class _CourtDetailScreenState extends State<CourtDetailScreen> {
                             },
                           ),
                         ),
-        
+
                         const Text(
                           'Mô tả',
                           style: TextStyle(
@@ -244,10 +249,10 @@ class _CourtDetailScreenState extends State<CourtDetailScreen> {
                           ),
                         ),
                         const SizedBox(height: 16),
-        
+
                         PoliciesSection(policies: court['policies']),
                         const SizedBox(height: 16),
-        
+
                         const Text(
                           'Vị trí trên bản đồ',
                           style: TextStyle(
@@ -260,10 +265,10 @@ class _CourtDetailScreenState extends State<CourtDetailScreen> {
                           address: '123 Đường Láng, Đống Đa, Hà Nội',
                         ),
                         const SizedBox(height: 16),
-        
+
                         const AreaSearchBox(),
                         const SizedBox(height: 16),
-        
+
                         CourtSelection(
                           courts: availableCourts,
                           showAllReviews: showAllReviews,
@@ -277,7 +282,7 @@ class _CourtDetailScreenState extends State<CourtDetailScreen> {
                               (review) => review['isOwner'] == true,
                               orElse: () => {},
                             );
-        
+
                             if (ownerReview.isNotEmpty) {
                               setState(() {
                                 showReviewModal = true;
@@ -291,7 +296,7 @@ class _CourtDetailScreenState extends State<CourtDetailScreen> {
                             });
                           },
                         ),
-        
+
                         ReviewsSection(
                           reviews: reviews,
                           showAllReviews: showAllReviews,
@@ -339,7 +344,7 @@ class _CourtDetailScreenState extends State<CourtDetailScreen> {
                 ],
               ),
             ),
-        
+
             ReviewFormModal(
               visible: showReviewModal,
               isEditing: true,
@@ -358,7 +363,7 @@ class _CourtDetailScreenState extends State<CourtDetailScreen> {
                 });
               },
             ),
-        
+
             Positioned(
               bottom: 0,
               left: 0,
@@ -367,6 +372,7 @@ class _CourtDetailScreenState extends State<CourtDetailScreen> {
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.white,
+                  borderRadius: BorderRadius.circular(35),
                   boxShadow: [
                     BoxShadow(
                       color: Color.fromRGBO(0, 0, 0, 0.1),
@@ -398,7 +404,7 @@ class _CourtDetailScreenState extends State<CourtDetailScreen> {
                                     availableCourts[selectedCourtIndex!]['discountedPrice'] <
                                         availableCourts[selectedCourtIndex!]['price'])
                                   Text(
-                                    '${availableCourts[selectedCourtIndex!]['price'].toStringAsFixed(0)} VNĐ/giờ',
+                                    '${formatPrice(availableCourts[selectedCourtIndex!]['price'])}/giờ',
                                     style: const TextStyle(
                                       fontSize: 16,
                                       color: Colors.grey,
@@ -406,7 +412,7 @@ class _CourtDetailScreenState extends State<CourtDetailScreen> {
                                     ),
                                   ),
                                 Text(
-                                  '${(availableCourts[selectedCourtIndex!]['discountedPrice'] ?? availableCourts[selectedCourtIndex!]['price']).toStringAsFixed(0)} VNĐ/giờ',
+                                  '${formatPrice(availableCourts[selectedCourtIndex!]['discountedPrice'] ?? availableCourts[selectedCourtIndex!]['price'])}/giờ',
                                   style: const TextStyle(
                                     fontSize: 24,
                                     fontWeight: FontWeight.bold,
