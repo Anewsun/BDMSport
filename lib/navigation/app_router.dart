@@ -5,6 +5,7 @@ import '../features/auth/screens/sign_in_screen.dart';
 import '../features/auth/screens/sign_up_screen.dart';
 import '../features/auth/screens/send_email_screen.dart';
 import '../features/booking/screens/booking_detail_screen.dart';
+import '../features/booking/screens/booking_information.dart';
 import '../features/booking/screens/booking_list_screen.dart';
 import '../features/chat/screens/chat_list_screen.dart';
 import '../features/chat/screens/chat_screen.dart';
@@ -52,10 +53,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/court-detail', builder: (_, _) => const CourtDetailScreen()),
       GoRoute(path: '/notification', builder: (_, _) => const NotificationsScreen()),
       GoRoute(path: '/booking-detail', builder: (_, _) => const BookingDetailScreen(bookingId: '',)),
-      GoRoute(
-        path: '/chat',
-        builder: (_, _) => const ChatScreen(userId: ''),
-      ),
+      GoRoute(path: '/chat', builder: (_, _) => const ChatScreen(userId: '')),
+      GoRoute(path: '/booking-step', builder: (_, _) => const BadmintonCourtBookingScreen()),
       ShellRoute(
         builder: (_, _, child) => BottomNavBar(child: child),
         routes: [

@@ -177,6 +177,8 @@ class _CourtSelectionState extends State<CourtSelection> {
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       IconButton(
                         icon: Icon(
@@ -270,6 +272,8 @@ class _CourtSelectionState extends State<CourtSelection> {
                             fontSize: 16,
                             color: Colors.black,
                           ),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
 
@@ -278,7 +282,7 @@ class _CourtSelectionState extends State<CourtSelection> {
                       'Kích thước: ${court['size']}',
                     ),
                     _buildDetailRow(
-                      Icons.category,
+                      Icons.sports_tennis_rounded,
                       'Loại sân: ${court['type']}',
                     ),
                     _buildDetailRow(
@@ -330,7 +334,14 @@ class _CourtSelectionState extends State<CourtSelection> {
         children: [
           Icon(icon, size: 20, color: Colors.blueAccent),
           const SizedBox(width: 8),
-          Text(text, style: const TextStyle(fontSize: 15, color: Colors.black)),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(fontSize: 15, color: Colors.black),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
         ],
       ),
     );

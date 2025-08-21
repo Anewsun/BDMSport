@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/models/court_model.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/review_form_modal.dart';
@@ -437,7 +438,11 @@ class _CourtDetailScreenState extends State<CourtDetailScreen> {
                           borderRadius: BorderRadius.circular(25),
                         ),
                       ),
-                      onPressed: selectedCourtIndex != null ? () {} : null,
+                      onPressed: selectedCourtIndex != null
+                          ? () {
+                              context.push('/booking-step');
+                            }
+                          : null,
                       child: const Text(
                         'Đặt sân ngay',
                         style: TextStyle(

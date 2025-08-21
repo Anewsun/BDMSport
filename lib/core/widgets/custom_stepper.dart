@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 
-class Stepper extends StatelessWidget {
+class CustomStepper extends StatelessWidget {
   final List<String> steps;
   final int currentStep;
 
-  const Stepper({super.key, required this.steps, required this.currentStep});
+  const CustomStepper({
+    super.key,
+    required this.steps,
+    required this.currentStep,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -58,18 +62,24 @@ class Stepper extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 5),
-                    Text(
-                      steps[index],
-                      style: TextStyle(
-                        color: isCompleted
-                            ? Colors.green
-                            : isActive
-                            ? Colors.blue
-                            : Colors.grey,
-                        fontWeight: isActive
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                        fontSize: 15,
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8.0,
+                      ),
+                      child: Text(
+                        steps[index],
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: isCompleted
+                              ? Colors.green
+                              : isActive
+                              ? Colors.blue
+                              : Colors.grey,
+                          fontWeight: isActive
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                          fontSize: 15,
+                        ),
                       ),
                     ),
                   ],
