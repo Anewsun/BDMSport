@@ -1,32 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/models/court_model.dart';
 import '../../../core/widgets/court_card.dart';
-import '../../../core/widgets/pagination_controls.dart';
 
 class DiscountedCourtsSection extends StatelessWidget {
-  final List<Map<String, dynamic>> courts;
-  final int currentPage;
-  final int totalPages;
-  final Function(int) onPageChanged;
+  final List<Court> courts;
+  final bool isDiscounted;
+  final VoidCallback? onRetry;
 
   const DiscountedCourtsSection({
     super.key,
     required this.courts,
-    required this.currentPage,
-    required this.totalPages,
-    required this.onPageChanged,
+    this.isDiscounted = true,
+    this.onRetry,
   });
 
   @override
   Widget build(BuildContext context) {
-    final paginatedCourts = courts.skip((currentPage - 1) * 6).take(6).toList();
-
     return Column(
       children: [
         Container(
           padding: const EdgeInsets.fromLTRB(15, 25, 15, 10),
+          alignment: Alignment.centerLeft,
           child: Text(
-            'Sân đang có giảm giá',
+            isDiscounted ? 'Sân đang có giảm giá' : 'Các sân hiện có',
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
@@ -48,39 +45,58 @@ class DiscountedCourtsSection extends StatelessWidget {
             ),
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 15),
-          child: GridView.builder(
+
+        if (courts.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Column(
+              children: [
+                const Text(
+                  'Không có dữ liệu để hiển thị',
+                  style: TextStyle(fontSize: 16, color: Colors.lightBlue),
+                ),
+                if (onRetry != null)
+                  TextButton(onPressed: onRetry, child: const Text('Thử lại')),
+              ],
+            ),
+          )
+        else
+          GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: paginatedCourts.length,
+            padding: const EdgeInsets.symmetric(horizontal: 15),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              mainAxisSpacing: 10,
               crossAxisSpacing: 10,
-              childAspectRatio: 0.55,
+              mainAxisSpacing: 10,
+              childAspectRatio: 0.6,
             ),
-            itemBuilder: (_, index) {
-              final court = paginatedCourts[index];
-              return CourtCard(
-                court: court,
+            itemCount: courts.length,
+            itemBuilder: (context, index) {
+              final court = courts[index];
+
+              final map = <String, dynamic>{
+                'name': court.name,
+                'address': court.address,
+                'featuredImageUrl': court.featuredImage,
+                'rating': court.rating,
+                'lowestPrice': court.lowestPrice,
+                'lowestDiscountedPrice': court.lowestDiscountedPrice,
+                'highestDiscountPercent': court.highestDiscountPercent,
+              };
+
+              return GestureDetector(
                 onTap: () {
-                  context.push('/court-detail');
+                  context.push('/court-detail/${court.id}');
                 },
-                isFavorite: false,
-                onToggleFavorite: () {},
-                showDiscountBadge: true,
+                child: CourtCard(
+                  court: map,
+                  showDiscountBadge:
+                      isDiscounted && court.highestDiscountPercent > 0,
+                ),
               );
             },
           ),
-        ),
-        const SizedBox(height: 20),
-        PaginationControls(
-          currentPage: currentPage,
-          totalPages: totalPages,
-          onPageChanged: onPageChanged,
-        ),
-        const SizedBox(height: 60),
       ],
     );
   }

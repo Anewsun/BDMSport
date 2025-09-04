@@ -27,8 +27,8 @@ class CourtCard extends StatelessWidget {
         discountedPrice != null &&
         lowestPrice > discountedPrice;
 
-    final int highestDiscountPercent =
-        (court['highestDiscountPercent'] ?? 0) as int;
+    final double highestDiscountPercent = (court['highestDiscountPercent'] ?? 0)
+        .toDouble();
     final String? imageUrl = court['featuredImageUrl'];
     final String name = court['name'] ?? 'Tên sân';
     final String address = court['address'] ?? 'Địa chỉ không xác định';
@@ -53,6 +53,7 @@ class CourtCard extends StatelessWidget {
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Stack(
               children: [
@@ -61,7 +62,7 @@ class CourtCard extends StatelessWidget {
                     top: Radius.circular(10),
                   ),
                   child: imageUrl != null && imageUrl.isNotEmpty
-                      ? Image.asset(
+                      ? Image.network(
                           imageUrl,
                           width: double.infinity,
                           height: 150,
@@ -86,7 +87,7 @@ class CourtCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(15),
                       ),
                       child: Text(
-                        '-$highestDiscountPercent%',
+                        '-${highestDiscountPercent.toStringAsFixed(2)}%',
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -122,65 +123,78 @@ class CourtCard extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.all(10),
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      name,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                    SizedBox(
+                      height: 40,
+                      child: Text(
+                        name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.location_on,
-                          size: 17,
-                          color: Colors.redAccent,
-                        ),
-                        const SizedBox(width: 5),
-                        Expanded(
-                          child: Text(
-                            address,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 15,
-                              color: Colors.black,
+                    SizedBox(
+                      height: 40,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Padding(
+                            padding: EdgeInsets.only(top: 2),
+                            child: Icon(
+                              Icons.location_on,
+                              size: 17,
+                              color: Colors.redAccent,
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (hasDiscount)
-                              Text(
-                                formatPrice(discountedPrice),
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey,
-                                  decoration: TextDecoration.lineThrough,
-                                ),
-                              ),
-                            Text(
-                              formatPrice(
-                                (discountedPrice ?? lowestPrice) ?? 0,
-                              ),
+                          const SizedBox(width: 5),
+                          Expanded(
+                            child: Text(
+                              address,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.lightBlue,
+                                fontSize: 14,
+                                color: Colors.black,
                               ),
                             ),
-                          ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (hasDiscount)
+                                Text(
+                                  formatPrice(lowestPrice),
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey,
+                                    decoration: TextDecoration.lineThrough,
+                                  ),
+                                ),
+                              Text(
+                                formatPrice(
+                                  (discountedPrice ?? lowestPrice) ?? 0,
+                                ),
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.lightBlue,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                         Row(
                           children: [
@@ -189,7 +203,6 @@ class CourtCard extends StatelessWidget {
                               size: 17,
                               color: Colors.amber,
                             ),
-                            const SizedBox(width: 5),
                             Text(
                               rating.toStringAsFixed(1),
                               style: const TextStyle(

@@ -17,8 +17,8 @@ class _CourtHeaderState extends State<CourtHeader> {
   bool _isFavorite = false;
 
   List<String> get _images {
-    return widget.court.images?.isNotEmpty ?? false
-        ? widget.court.images!
+    return widget.court.images.isNotEmpty
+        ? widget.court.images
         : widget.court.featuredImage != null
             ? [widget.court.featuredImage!]
             : [
