@@ -92,11 +92,11 @@ class _FilterScreenState extends State<FilterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        appBar: PreferredSize(
-          preferredSize: const Size.fromHeight(kToolbarHeight),
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(kToolbarHeight),
+        child: SafeArea(
           child: CustomHeader(
             title: 'Bộ lọc ($_activeFilterCount)',
             onBackPress: () => Navigator.pop(context),
@@ -104,7 +104,9 @@ class _FilterScreenState extends State<FilterScreen> {
             rightComponent: null,
           ),
         ),
-        body: Column(
+      ),
+      body: SafeArea(
+        child: Column(
           children: [
             Expanded(
               child: SingleChildScrollView(
@@ -278,7 +280,7 @@ class _FilterScreenState extends State<FilterScreen> {
                                 Text(
                                   amenity['name'],
                                   textAlign: TextAlign.center,
-                                  style: const TextStyle(fontSize: 12),
+                                  style: const TextStyle(fontSize: 14),
                                 ),
                               ],
                             ),

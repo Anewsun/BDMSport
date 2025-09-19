@@ -10,6 +10,7 @@ class PopularLocationsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
+      key: ValueKey('popular-locations-${locations.length}'),
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(15, 25, 15, 10),

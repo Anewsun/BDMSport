@@ -18,6 +18,7 @@ class DiscountedCourtsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
+      key: ValueKey('courts-section-${courts.length}'),
       children: [
         Container(
           padding: const EdgeInsets.fromLTRB(15, 25, 15, 10),

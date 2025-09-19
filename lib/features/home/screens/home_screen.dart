@@ -27,6 +27,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   bool _isLoading = true;
   bool _isDiscounted = true;
 
+  List<Map<String, dynamic>> _popularLocations = [];
+  bool _isLoadingPopularLocations = true;
+
   late ProviderSubscription<AuthState> _subscription;
   final ScrollController _scrollController = ScrollController();
 
@@ -34,6 +37,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void initState() {
     super.initState();
     _loadCourts();
+    _loadPopularLocations();
 
     _subscription = ref.listenManual<AuthState>(signInControllerProvider, (
       previous,
@@ -74,6 +78,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
+  Future<void> _loadPopularLocations() async {
+    setState(() {
+      _isLoadingPopularLocations = true;
+    });
+
+    try {
+      final locations = await ref
+          .read(courtControllerProvider)
+          .getTopLocationsWithCourts();
+      setState(() {
+        _popularLocations = locations;
+      });
+    } catch (e) {
+      setState(() {
+        _popularLocations = [];
+      });
+    } finally {
+      setState(() {
+        _isLoadingPopularLocations = false;
+      });
+    }
+  }
+
   List<Court> get _currentPageCourts {
     final startIndex = (currentPage - 1) * itemsPerPage;
     final endIndex = startIndex + itemsPerPage;
@@ -88,14 +115,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _handlePageChange(int newPage) {
+    final double currentScrollPosition = _scrollController.offset;
+
     setState(() {
       currentPage = newPage;
     });
-    _scrollController.animateTo(
-      0,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOut,
-    );
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.jumpTo(currentScrollPosition);
+      }
+    });
   }
 
   @override
@@ -137,6 +167,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 currentPage = 1;
               });
               await _loadCourts();
+              await _loadPopularLocations();
             },
             child: CustomScrollView(
               controller: _scrollController,
@@ -195,28 +226,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
 
                 SliverToBoxAdapter(
-                  child: FutureBuilder<List<Map<String, dynamic>>>(
-                    future: ref
-                        .read(courtControllerProvider)
-                        .getTopLocationsWithCourts(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Padding(
+                  child: _isLoadingPopularLocations
+                      ? const Padding(
                           padding: EdgeInsets.symmetric(vertical: 20),
                           child: Center(child: CircularProgressIndicator()),
-                        );
-                      }
-                      if (snapshot.hasError) {
-                        return PopularLocationsSection(locations: []);
-                      }
-                      if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                        return PopularLocationsSection(locations: []);
-                      }
-
-                      final locations = snapshot.data!;
-                      return PopularLocationsSection(locations: locations);
-                    },
-                  ),
+                        )
+                      : PopularLocationsSection(locations: _popularLocations),
                 ),
 
                 SliverToBoxAdapter(
@@ -228,6 +243,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       : DiscountedCourtsSection(
                           courts: _currentPageCourts,
                           isDiscounted: _isDiscounted,
+                          onRetry: _loadCourts,
                         ),
                 ),
 
