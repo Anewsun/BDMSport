@@ -7,7 +7,7 @@ import '../../../core/widgets/pagination_controls.dart';
 import '../../../core/widgets/search_box.dart';
 import '../../../navigation/bottom_nav_bar.dart';
 import '../../auth/controllers/sign_in_controller.dart';
-import '../../court/controllers/court_controller.dart';
+import '../../../core/controllers/court_controller.dart';
 import '../widgets/discounted_courts_section.dart';
 import '../widgets/notification_icon_with_badge.dart';
 import '../widgets/popular_locations_section.dart';

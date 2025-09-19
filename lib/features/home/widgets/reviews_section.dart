@@ -143,7 +143,7 @@ class ReviewsSection extends StatelessWidget {
                         style: const TextStyle(
                           color: Colors.black87,
                           fontSize: 15,
-                          fontWeight: FontWeight.bold
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -165,6 +165,8 @@ class ReviewsSection extends StatelessWidget {
   }
 
   Widget _buildReviewItem(Map<String, dynamic> review) {
+    final isOwner = review['isOwner'] ?? false;
+
     return Card(
       color: Colors.white,
       margin: const EdgeInsets.only(bottom: 12),
@@ -182,16 +184,16 @@ class ReviewsSection extends StatelessWidget {
                   backgroundImage: review['isAnonymous']
                       ? const AssetImage('assets/images/anonymous.png')
                       : (review['userImage'] != null &&
-                                review['userImage'].isNotEmpty
-                            ? (review['userImage'].startsWith('http')
-                                  ? NetworkImage(review['userImage'])
-                                  : AssetImage(review['userImage']))
-                            : const AssetImage(
-                                'assets/images/default-avatar.jpg',
-                              )),
+                                    review['userImage'].isNotEmpty
+                                ? (review['userImage'].startsWith('http')
+                                      ? NetworkImage(review['userImage'])
+                                      : AssetImage(review['userImage']))
+                                : const AssetImage(
+                                    'assets/images/default-avatar.jpg',
+                                  ))
+                            as ImageProvider,
                 ),
                 const SizedBox(width: 12),
-
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -202,13 +204,13 @@ class ReviewsSection extends StatelessWidget {
                           Text(
                             review['isAnonymous']
                                 ? 'Ẩn danh'
-                                : review['userName'] ?? 'Khách',
+                                : review['name'] ?? 'Khách',
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
                             ),
                           ),
-                          if (review['isOwner'] ?? false)
+                          if (isOwner)
                             Row(
                               children: [
                                 IconButton(

@@ -21,7 +21,7 @@ class LoadingOverlay extends StatelessWidget {
               color: Color.fromRGBO(0, 0, 0, 0.3),
               child: const Center(
                 child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.blueAccent),
                 ),
               ),
             ),

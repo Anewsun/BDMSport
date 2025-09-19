@@ -157,7 +157,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                                 builder: (context) => ReviewFormModal(
                                   visible: true,
                                   onClose: () => Navigator.pop(context),
-                                  onSubmit: () {
+                                  onSubmit: (reviewData) {
                                     Navigator.pop(context);
                                     Fluttertoast.showToast(
                                       msg: "Cảm ơn bạn đã đánh giá!",

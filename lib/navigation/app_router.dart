@@ -49,20 +49,45 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/contact', builder: (_, _) => const ContactScreen()),
       GoRoute(path: '/privacy', builder: (_, _) => const PrivacyPolicyScreen()),
       GoRoute(path: '/filter', builder: (_, _) => const FilterScreen()),
-      GoRoute(path: '/search-results', builder: (_, _) => const SearchResultScreen()),
-      //GoRoute(path: '/court-detail', builder: (_, _) => const CourtDetailScreen()),
-      GoRoute(path: '/notification', builder: (_, _) => const NotificationsScreen()),
-      GoRoute(path: '/booking-detail', builder: (_, _) => const BookingDetailScreen(bookingId: '',)),
-      GoRoute(path: '/chat', builder: (_, _) => const ChatScreen(userId: '')),
-      GoRoute(path: '/booking-step', builder: (_, _) => const BadmintonCourtBookingScreen()),
+      GoRoute(
+        path: '/search-results',
+        builder: (_, _) => const SearchResultScreen(),
+      ),
+      GoRoute(
+        path: '/court-detail/:courtId',
+        builder: (_, state) =>
+            CourtDetailScreen(courtId: state.pathParameters['courtId']!),
+      ),
+      GoRoute(
+        path: '/notification',
+        builder: (_, _) => const NotificationsScreen(),
+      ),
+      GoRoute(
+        path: '/booking-detail',
+        builder: (_, _) => const BookingDetailScreen(bookingId: ''),
+      ),
+      GoRoute(
+        path: '/chat',
+        builder: (_, _) => const ChatScreen(userId: ''),
+      ),
+      GoRoute(
+        path: '/booking-step',
+        builder: (_, _) => const BadmintonCourtBookingScreen(),
+      ),
       ShellRoute(
         builder: (_, _, child) => BottomNavBar(child: child),
         routes: [
           GoRoute(path: '/home', builder: (_, _) => const HomeScreen()),
           GoRoute(path: '/setting', builder: (_, _) => const SettingScreen()),
           GoRoute(path: '/favorite', builder: (_, _) => const FavoriteScreen()),
-          GoRoute(path: '/chat-list', builder: (_, _) => const ChatListScreen()),
-          GoRoute(path: '/booking-list', builder: (_, _) => const BookingListScreen()),
+          GoRoute(
+            path: '/chat-list',
+            builder: (_, _) => const ChatListScreen(),
+          ),
+          GoRoute(
+            path: '/booking-list',
+            builder: (_, _) => const BookingListScreen(),
+          ),
         ],
       ),
     ],

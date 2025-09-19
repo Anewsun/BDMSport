@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
+typedef ReviewSubmitCallback = void Function(Map<String, dynamic> reviewData);
+
 class ReviewFormModal extends StatefulWidget {
   final bool visible;
   final bool isEditing;
   final Map<String, dynamic>? review;
   final VoidCallback onClose;
-  final VoidCallback onSubmit;
+  final ReviewSubmitCallback onSubmit;
 
   const ReviewFormModal({
     super.key,
@@ -37,11 +39,36 @@ class _ReviewFormModalState extends State<ReviewFormModal> {
   @override
   void initState() {
     super.initState();
+    _populateForm();
+  }
+
+  @override
+  void didUpdateWidget(ReviewFormModal oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (widget.visible &&
+        widget.review != null &&
+        (oldWidget.review != widget.review || !oldWidget.visible)) {
+      _populateForm();
+    }
+  }
+
+  void _populateForm() {
     if (widget.isEditing && widget.review != null) {
-      _rating = widget.review!['rating'] ?? 0;
-      _titleController.text = widget.review!['title'] ?? '';
-      _commentController.text = widget.review!['comment'] ?? '';
-      _isAnonymous = widget.review!['isAnonymous'] ?? false;
+      setState(() {
+        _rating = widget.review!['rating'] ?? 0;
+        _titleController.text = widget.review!['title'] ?? '';
+        _commentController.text = widget.review!['comment'] ?? '';
+        _isAnonymous = widget.review!['isAnonymous'] ?? false;
+      });
+    } else {
+      // Reset form khi tạo mới
+      setState(() {
+        _rating = 0;
+        _titleController.clear();
+        _commentController.clear();
+        _isAnonymous = false;
+      });
     }
   }
 
@@ -198,7 +225,14 @@ class _ReviewFormModalState extends State<ReviewFormModal> {
                           borderRadius: BorderRadius.circular(25),
                         ),
                       ),
-                      onPressed: widget.onSubmit,
+                      onPressed: () {
+                        widget.onSubmit({
+                          'rating': _rating,
+                          'title': _titleController.text,
+                          'comment': _commentController.text,
+                          'isAnonymous': _isAnonymous,
+                        });
+                      },
                       child: const Text(
                         'Gửi',
                         style: TextStyle(

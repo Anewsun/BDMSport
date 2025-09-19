@@ -29,11 +29,27 @@ class PoliciesSection extends StatelessWidget {
               inside: BorderSide(color: Colors.grey.shade300),
             ),
             children: [
-              _buildPolicyRow('Giờ mở cửa', policies['checkInTime']),
-              _buildPolicyRow('Giờ đóng cửa', policies['checkOutTime']),
-              _buildPolicyRow('Trẻ em', policies['childrenPolicy']),
-              _buildPolicyRow('Thú cưng', policies['petPolicy']),
-              _buildPolicyRow('Hút thuốc', policies['smokingPolicy']),
+              _buildPolicyRow('Giờ mở cửa', policies['checkInTime'] ?? '7:00'),
+              _buildPolicyRow(
+                'Giờ đóng cửa',
+                policies['checkOutTime'] ?? '23:00',
+              ),
+              _buildPolicyRow(
+                'Trẻ em',
+                policies['childrenPolicy'] ?? 'Không cho phép',
+              ),
+              _buildPolicyRow(
+                'Thú cưng',
+                policies['petPolicy'] ?? 'Không cho phép',
+              ),
+              _buildPolicyRow(
+                'Hút thuốc',
+                policies['smokingPolicy'] ?? 'Không cho phép',
+              ),
+              _buildPolicyRow(
+                'Hủy đặt',
+                policies['cancellationPolicy'] ?? '24h-full-refund',
+              ),
             ],
           ),
         ),
@@ -43,7 +59,7 @@ class PoliciesSection extends StatelessWidget {
 
   TableRow _buildPolicyRow(String label, String value) {
     return TableRow(
-      decoration: BoxDecoration(color: Colors.white),
+      decoration: const BoxDecoration(color: Colors.white),
       children: [
         Container(
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),

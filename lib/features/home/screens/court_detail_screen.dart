@@ -1,464 +1,489 @@
-// import 'package:flutter/material.dart';
-// import 'package:go_router/go_router.dart';
-// import '../../../core/models/court_model.dart';
-// import '../../../core/utils/formatters.dart';
-// import '../../../core/widgets/review_form_modal.dart';
-// import '../widgets/area_search_box.dart';
-// import '../widgets/court_header.dart';
-// import '../widgets/court_map.dart';
-// import '../widgets/court_selection.dart';
-// import '../widgets/policies_section.dart';
-// import '../widgets/reviews_section.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:go_router/go_router.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../core/controllers/court_controller.dart';
+import '../../../core/controllers/review_controller.dart';
+import '../../../core/models/court_model.dart';
+import '../../../core/models/area_model.dart';
+import '../../../core/models/review_model.dart';
+import '../../../core/utils/amenity_icons.dart';
+import '../../../core/widgets/review_form_modal.dart';
+import '../widgets/area_search_box.dart';
+import '../widgets/booking_bar.dart';
+import '../widgets/court_header.dart';
+import '../widgets/court_map.dart';
+import '../widgets/court_selection.dart';
+import '../widgets/policies_section.dart';
+import '../widgets/reviews_section.dart';
 
-// class CourtDetailScreen extends StatefulWidget {
-//   const CourtDetailScreen({super.key});
+class CourtDetailScreen extends ConsumerStatefulWidget {
+  final String courtId;
 
-//   @override
-//   State<CourtDetailScreen> createState() => _CourtDetailScreenState();
-// }
+  const CourtDetailScreen({super.key, required this.courtId});
 
-// class _CourtDetailScreenState extends State<CourtDetailScreen> {
-//   int? selectedCourtIndex;
-//   bool showFullDesc = false;
-//   bool showReviewModal = false;
-//   bool showAllReviews = false;
+  @override
+  ConsumerState<CourtDetailScreen> createState() => _CourtDetailScreenState();
+}
 
-//   final Map<String, dynamic> court = {
-//     'id': '1',
-//     'name': 'Sân cầu lông thể thao Thủ Đức',
-//     'address': '56 Võ Văn Ngân, Linh Chiểu, Thủ Đức',
-//     'rating': 3.3,
-//     'reviewCount': 3,
-//     'description':
-//         'Sân cầu lông tiêu chuẩn quốc tế với mặt sân PU cao cấp, hệ thống chiếu sáng LED hiện đại. Sân có 10 lưới tiêu chuẩn, phòng thay đồ rộng rãi và chỗ đậu xe thoải mái.',
-//     'images': ['assets/images/court1.jpg', 'assets/images/court2.jpg'],
-//     'amenities': [
-//       {'icon': Icons.local_parking, 'name': 'Bãi đỗ xe'},
-//       {'icon': Icons.restaurant, 'name': 'Quán nước'},
-//       {'icon': Icons.shower, 'name': 'Phòng tắm'},
-//       {'icon': Icons.shopping_cart, 'name': 'Cửa hàng'},
-//     ],
-//     'policies': {
-//       'checkInTime': '06:00',
-//       'checkOutTime': '22:00',
-//       'childrenPolicy': 'Cho phép',
-//       'petPolicy': 'Không cho phép',
-//       'smokingPolicy': 'Không cho phép',
-//     },
-//   };
+class _CourtDetailScreenState extends ConsumerState<CourtDetailScreen> {
+  int? selectedAreaIndex;
+  bool showFullDesc = false;
+  bool showReviewModal = false;
+  bool showAllReviews = false;
+  Review? userReview;
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-//   Court _mapToCourt(Map<String, dynamic> map) {
-//     return Court(
-//       id: map['id'],
-//       name: map['name'],
-//       images: map['images'],
-//       featuredImage: map['featuredImage'],
-//     );
-//   }
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadUserReview();
+    });
+  }
 
-//   final List<Map<String, dynamic>> availableCourts = [
-//     {
-//       'id': '1',
-//       'name': 'Sân tiêu chuẩn 1',
-//       'images': ['assets/images/court1.jpg'],
-//       'price': 150000,
-//       'discountedPrice': 120000,
-//       'discountPercent': 20,
-//       'description': 'Sân tiêu chuẩn Olympic, chất lượng cao',
-//       'size': '13.4m x 6.1m',
-//       'type': 'Sân trong nhà',
-//       'lighting': 'Đèn LED cao cấp',
-//       'status': 'available',
-//     },
-//     {
-//       'id': '2',
-//       'name': 'Sân tiêu chuẩn 2',
-//       'images': ['assets/images/court2.jpg'],
-//       'price': 180000,
-//       'discountedPrice': null,
-//       'discountPercent': 0,
-//       'description': 'Sân ngoài trời, thoáng mát',
-//       'size': '13.4m x 6.1m',
-//       'type': 'Sân ngoài trời',
-//       'lighting': 'Đèn halogen',
-//       'status': 'available',
-//     },
-//     {
-//       'id': '3',
-//       'name': 'Sân quý sờ tộc 2',
-//       'images': ['assets/images/court3.jpg'],
-//       'price': 200000,
-//       'discountedPrice': null,
-//       'discountPercent': 0,
-//       'description': 'Sân trong nhà, dụng cụ tốt nhất',
-//       'size': '13.4m x 6.1m',
-//       'type': 'Sân trong nhà',
-//       'lighting': 'Đèn auto nhập khẩu',
-//       'status': 'available',
-//     },
-//   ];
+  void _loadUserReview() async {
+    try {
+      final reviewController = ref.read(reviewControllerProvider);
+      final review = await reviewController.getUserReviewForCourt(
+        widget.courtId,
+      );
+      setState(() {
+        userReview = review;
+      });
+    } catch (e) {
+      setState(() {
+        userReview = null;
+      });
+    }
+  }
 
-//   final List<Map<String, dynamic>> reviews = [
-//     {
-//       'rating': 5,
-//       'title': 'Sân rất tốt',
-//       'comment': 'Mặt sân đẹp, thoáng mát',
-//       'date': '08/08/2025',
-//       'isAnonymous': false,
-//       'userName': 'Nguyễn Văn A',
-//       'userImage': 'assets/images/default-avatar.jpg',
-//       'images': [],
-//       'isOwner': true,
-//     },
-//     {
-//       'rating': 4,
-//       'title': 'Hài lòng',
-//       'comment': 'Giá cả hợp lý, sân ổn định nhưng hơi ồn',
-//       'date': '05/04/2025',
-//       'isAnonymous': true,
-//       'userName': '',
-//       'userImage': 'assets/images/anonymous.png',
-//       'images': [],
-//       'isOwner': false,
-//     },
-//     {
-//       'rating': 1,
-//       'title': 'Sân tốt',
-//       'comment': 'Giá cả hợp lý, sân ổn định nhưng thua hơi nhiều nên 1*',
-//       'date': '05/04/2025',
-//       'isAnonymous': false,
-//       'userName': 'Người lạ đi ngang qua',
-//       'userImage': 'assets/images/default-avatar.jpg',
-//       'images': [],
-//       'isOwner': true,
-//     },
-//   ];
+  void _refreshData() {
+    ref.invalidate(courtFutureProvider(widget.courtId));
+    ref.invalidate(areasFutureProvider(widget.courtId));
+    ref.invalidate(courtReviewsFutureProvider(widget.courtId));
+    _loadUserReview();
+  }
 
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       backgroundColor: const Color(0xFFf0f4ff),
-//       body: SafeArea(
-//         child: Stack(
-//           children: [
-//             SingleChildScrollView(
-//               child: Column(
-//                 children: [
-//                   CourtHeader(court: _mapToCourt(court)),
+  @override
+  Widget build(BuildContext context) {
+    final courtAsync = ref.watch(courtFutureProvider(widget.courtId));
+    final areasAsync = ref.watch(areasFutureProvider(widget.courtId));
+    final reviewsAsync = ref.watch(courtReviewsFutureProvider(widget.courtId));
 
-//                   Padding(
-//                     padding: const EdgeInsets.all(16.0),
-//                     child: Column(
-//                       crossAxisAlignment: CrossAxisAlignment.start,
-//                       children: [
-//                         Text(
-//                           court['name'],
-//                           style: const TextStyle(
-//                             fontSize: 24,
-//                             fontWeight: FontWeight.bold,
-//                           ),
-//                         ),
-//                         const SizedBox(height: 8),
-//                         Row(
-//                           children: [
-//                             const Icon(Icons.location_on, size: 20),
-//                             const SizedBox(width: 4),
-//                             Expanded(
-//                               child: Text(
-//                                 court['address'],
-//                                 style: const TextStyle(fontSize: 16),
-//                               ),
-//                             ),
-//                           ],
-//                         ),
-//                         const SizedBox(height: 8),
-//                         Row(
-//                           children: [
-//                             const Icon(
-//                               Icons.star,
-//                               color: Colors.amber,
-//                               size: 20,
-//                             ),
-//                             Text(
-//                               ' ${court['rating']} (${court['reviewCount']} đánh giá)',
-//                               style: const TextStyle(fontSize: 16),
-//                             ),
-//                           ],
-//                         ),
-//                         const SizedBox(height: 16),
+    return Scaffold(
+      backgroundColor: const Color(0xFFf0f4ff),
+      body: SafeArea(
+        child: Stack(
+          children: [
+            courtAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, stack) => Center(child: Text('Lỗi: $error')),
+              data: (court) => areasAsync.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (error, stack) => Center(child: Text('Lỗi: $error')),
+                data: (areas) => reviewsAsync.when(
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (error, stack) => Center(child: Text('Lỗi: $error')),
+                  data: (reviews) => _buildContent(court, areas, reviews),
+                ),
+              ),
+            ),
 
-//                         const Text(
-//                           'Tiện nghi',
-//                           style: TextStyle(
-//                             fontSize: 18,
-//                             fontWeight: FontWeight.bold,
-//                           ),
-//                         ),
-//                         const SizedBox(height: 8),
-//                         SizedBox(
-//                           height: 100,
-//                           child: ListView.builder(
-//                             scrollDirection: Axis.horizontal,
-//                             itemCount: court['amenities'].length,
-//                             itemBuilder: (context, index) {
-//                               final amenity = court['amenities'][index];
-//                               return Container(
-//                                 width: 80,
-//                                 margin: const EdgeInsets.only(right: 16),
-//                                 child: Column(
-//                                   children: [
-//                                     Icon(amenity['icon'], size: 30),
-//                                     const SizedBox(height: 8),
-//                                     Text(
-//                                       amenity['name'],
-//                                       textAlign: TextAlign.center,
-//                                       style: const TextStyle(fontSize: 14),
-//                                     ),
-//                                   ],
-//                                 ),
-//                               );
-//                             },
-//                           ),
-//                         ),
+            ReviewFormModal(
+              visible: showReviewModal,
+              isEditing: userReview != null,
+              review: userReview != null
+                  ? {
+                      'rating': userReview!.rating,
+                      'title': userReview!.title,
+                      'comment': userReview!.comment,
+                      'isAnonymous': userReview!.isAnonymous,
+                    }
+                  : null,
+              onClose: () {
+                setState(() {
+                  showReviewModal = false;
+                });
+              },
+              onSubmit: (reviewData) async {
+                try {
+                  final reviewController = ref.read(reviewControllerProvider);
+                  if (userReview != null) {
+                    await reviewController.updateReview(
+                      userReview!.id!,
+                      reviewData['rating'],
+                      reviewData['title'],
+                      reviewData['comment'],
+                      reviewData['isAnonymous'],
+                    );
+                    Fluttertoast.showToast(
+                      msg: 'Cập nhật đánh giá thành công!',
+                      toastLength: Toast.LENGTH_SHORT,
+                      gravity: ToastGravity.BOTTOM,
+                      backgroundColor: Colors.green,
+                      textColor: Colors.white,
+                      fontSize: 18,
+                    );
+                  } else {
+                    await reviewController.createReview(
+                      widget.courtId,
+                      reviewData['rating'],
+                      reviewData['title'],
+                      reviewData['comment'],
+                      reviewData['isAnonymous'],
+                    );
+                    Fluttertoast.showToast(
+                      msg: 'Thêm đánh giá thành công!',
+                      toastLength: Toast.LENGTH_SHORT,
+                      gravity: ToastGravity.BOTTOM,
+                      backgroundColor: Colors.green,
+                      textColor: Colors.white,
+                      fontSize: 18,
+                    );
+                  }
 
-//                         const Text(
-//                           'Mô tả',
-//                           style: TextStyle(
-//                             fontSize: 18,
-//                             fontWeight: FontWeight.bold,
-//                           ),
-//                         ),
-//                         const SizedBox(height: 8),
-//                         Text(
-//                           court['description'],
-//                           maxLines: showFullDesc ? null : 3,
-//                           overflow: showFullDesc ? null : TextOverflow.ellipsis,
-//                           style: const TextStyle(fontSize: 16),
-//                         ),
-//                         GestureDetector(
-//                           onTap: () {
-//                             setState(() {
-//                               showFullDesc = !showFullDesc;
-//                             });
-//                           },
-//                           child: Text(
-//                             showFullDesc ? 'Thu gọn' : 'Xem thêm...',
-//                             style: const TextStyle(
-//                               color: Colors.blue,
-//                               fontSize: 16,
-//                             ),
-//                           ),
-//                         ),
-//                         const SizedBox(height: 16),
+                  _refreshData();
+                } catch (e) {
+                  Fluttertoast.showToast(
+                    msg: "Lỗi: ${e.toString()}",
+                    toastLength: Toast.LENGTH_SHORT,
+                    gravity: ToastGravity.BOTTOM,
+                    backgroundColor: Colors.red,
+                    textColor: Colors.white,
+                    fontSize: 18,
+                  );
+                }
+                setState(() {
+                  showReviewModal = false;
+                });
+              },
+            ),
 
-//                         PoliciesSection(policies: court['policies']),
-//                         const SizedBox(height: 16),
+            areasAsync.when(
+              loading: () => Container(),
+              error: (error, stack) => Container(),
+              data: (areas) => Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: BookingBar(
+                  areas: areas,
+                  selectedAreaIndex: selectedAreaIndex,
+                  onBookPressed: () {
+                    context.push(
+                      '/booking-step',
+                      extra: {
+                        'courtId': widget.courtId,
+                        'areaId': areas[selectedAreaIndex!].id,
+                        'area': areas[selectedAreaIndex!],
+                      },
+                    );
+                  },
+                  isEnabled: true,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-//                         const Text(
-//                           'Vị trí trên bản đồ',
-//                           style: TextStyle(
-//                             fontSize: 18,
-//                             fontWeight: FontWeight.bold,
-//                           ),
-//                         ),
-//                         const SizedBox(height: 8),
-//                         const CourtMap(
-//                           address: '123 Đường Láng, Đống Đa, Hà Nội',
-//                         ),
-//                         const SizedBox(height: 16),
+  Widget _buildContent(Court court, List<Area> areas, List<Review> reviews) {
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          CourtHeader(court: court),
 
-//                         const AreaSearchBox(),
-//                         const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  court.name,
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(Icons.location_on, size: 20),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        court.address,
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                StreamBuilder<DocumentSnapshot<Court>>(
+                  stream: _db
+                      .collection('courts')
+                      .doc(widget.courtId)
+                      .withConverter<Court>(
+                        fromFirestore: (snap, _) => Court.fromFirestore(snap),
+                        toFirestore: (court, _) => court.toMap(),
+                      )
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    final courtRating = snapshot.hasData
+                        ? snapshot.data!.data()?.rating ?? 0.0
+                        : court.rating;
 
-//                         CourtSelection(
-//                           courts: availableCourts,
-//                           showAllReviews: showAllReviews,
-//                           onToggleReviews: () {
-//                             setState(() {
-//                               showAllReviews = !showAllReviews;
-//                             });
-//                           },
-//                           onEditReview: () {
-//                             final ownerReview = reviews.firstWhere(
-//                               (review) => review['isOwner'] == true,
-//                               orElse: () => {},
-//                             );
+                    return Row(
+                      children: [
+                        const Icon(Icons.star, color: Colors.amber, size: 20),
+                        Text(
+                          ' $courtRating (${reviews.length} đánh giá)',
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+                const SizedBox(height: 16),
 
-//                             if (ownerReview.isNotEmpty) {
-//                               setState(() {
-//                                 showReviewModal = true;
-//                               });
-//                             }
-//                           },
-//                           onDeleteReview: () {},
-//                           onCourtSelected: (index) {
-//                             setState(() {
-//                               selectedCourtIndex = index;
-//                             });
-//                           },
-//                         ),
+                const Text(
+                  'Tiện nghi',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  height: 100,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: court.amenities.length,
+                    itemBuilder: (context, index) {
+                      final amenityName = court.amenities[index];
+                      final amenityIcon = getAmenityIcon(amenityName);
+                      return Container(
+                        width: 80,
+                        margin: const EdgeInsets.only(right: 16),
+                        child: Column(
+                          children: [
+                            Icon(
+                              amenityIcon.icon,
+                              size: 30,
+                              color: amenityIcon.color,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              amenityIcon.vietnameseName,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(fontSize: 14),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
 
-//                         ReviewsSection(
-//                           reviews: reviews,
-//                           showAllReviews: showAllReviews,
-//                           onToggleReviews: () {
-//                             setState(() {
-//                               showAllReviews = !showAllReviews;
-//                             });
-//                           },
-//                           onEditReview: () {
-//                             setState(() {
-//                               showReviewModal = true;
-//                             });
-//                           },
-//                           onDeleteReview: () {
-//                             showDialog(
-//                               context: context,
-//                               builder: (context) => AlertDialog(
-//                                 title: const Text('Xóa đánh giá'),
-//                                 content: const Text(
-//                                   'Bạn có chắc chắn muốn xóa đánh giá này?',
-//                                 ),
-//                                 actions: [
-//                                   TextButton(
-//                                     onPressed: () => Navigator.pop(context),
-//                                     child: const Text('Hủy'),
-//                                   ),
-//                                   TextButton(
-//                                     onPressed: () {
-//                                       Navigator.pop(context);
-//                                     },
-//                                     child: const Text(
-//                                       'Xóa',
-//                                       style: TextStyle(color: Colors.red),
-//                                     ),
-//                                   ),
-//                                 ],
-//                               ),
-//                             );
-//                           },
-//                         ),
-//                         const SizedBox(height: 80),
-//                       ],
-//                     ),
-//                   ),
-//                 ],
-//               ),
-//             ),
+                const Text(
+                  'Mô tả',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  court.description,
+                  maxLines: showFullDesc ? null : 3,
+                  overflow: showFullDesc ? null : TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 16),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      showFullDesc = !showFullDesc;
+                    });
+                  },
+                  child: Text(
+                    showFullDesc ? 'Thu gọn' : 'Xem thêm...',
+                    style: const TextStyle(color: Colors.blue, fontSize: 16),
+                  ),
+                ),
+                const SizedBox(height: 16),
 
-//             ReviewFormModal(
-//               visible: showReviewModal,
-//               isEditing: true,
-//               review: reviews.firstWhere(
-//                 (review) => review['isOwner'] == true,
-//                 orElse: () => {},
-//               ),
-//               onClose: () {
-//                 setState(() {
-//                   showReviewModal = false;
-//                 });
-//               },
-//               onSubmit: () {
-//                 setState(() {
-//                   showReviewModal = false;
-//                 });
-//               },
-//             ),
+                PoliciesSection(policies: court.policies),
+                const SizedBox(height: 16),
 
-//             Positioned(
-//               bottom: 0,
-//               left: 0,
-//               right: 0,
-//               child: Container(
-//                 padding: const EdgeInsets.all(16),
-//                 decoration: BoxDecoration(
-//                   color: Colors.white,
-//                   borderRadius: BorderRadius.circular(35),
-//                   boxShadow: [
-//                     BoxShadow(
-//                       color: Color.fromRGBO(0, 0, 0, 0.1),
-//                       blurRadius: 10,
-//                       offset: const Offset(0, -5),
-//                     ),
-//                   ],
-//                 ),
-//                 child: Row(
-//                   children: [
-//                     Expanded(
-//                       child: Column(
-//                         crossAxisAlignment: CrossAxisAlignment.start,
-//                         children: [
-//                           const Text(
-//                             'Giá sân',
-//                             style: TextStyle(
-//                               fontSize: 20,
-//                               color: Colors.black,
-//                               fontWeight: FontWeight.bold,
-//                             ),
-//                           ),
-//                           if (selectedCourtIndex != null)
-//                             Column(
-//                               crossAxisAlignment: CrossAxisAlignment.start,
-//                               children: [
-//                                 if (availableCourts[selectedCourtIndex!]['discountedPrice'] !=
-//                                         null &&
-//                                     availableCourts[selectedCourtIndex!]['discountedPrice'] <
-//                                         availableCourts[selectedCourtIndex!]['price'])
-//                                   Text(
-//                                     '${formatPrice(availableCourts[selectedCourtIndex!]['price'])}/giờ',
-//                                     style: const TextStyle(
-//                                       fontSize: 16,
-//                                       color: Colors.grey,
-//                                       decoration: TextDecoration.lineThrough,
-//                                     ),
-//                                   ),
-//                                 Text(
-//                                   '${formatPrice(availableCourts[selectedCourtIndex!]['discountedPrice'] ?? availableCourts[selectedCourtIndex!]['price'])}/giờ',
-//                                   style: const TextStyle(
-//                                     fontSize: 24,
-//                                     fontWeight: FontWeight.bold,
-//                                     color: Colors.blue,
-//                                   ),
-//                                 ),
-//                               ],
-//                             ),
-//                         ],
-//                       ),
-//                     ),
-//                     ElevatedButton(
-//                       style: ElevatedButton.styleFrom(
-//                         backgroundColor: selectedCourtIndex != null
-//                             ? const Color(0xFF1167B1)
-//                             : Colors.grey,
-//                         padding: const EdgeInsets.symmetric(
-//                           horizontal: 24,
-//                           vertical: 12,
-//                         ),
-//                         shape: RoundedRectangleBorder(
-//                           borderRadius: BorderRadius.circular(25),
-//                         ),
-//                       ),
-//                       onPressed: selectedCourtIndex != null
-//                           ? () {
-//                               context.push('/booking-step');
-//                             }
-//                           : null,
-//                       child: const Text(
-//                         'Đặt sân ngay',
-//                         style: TextStyle(
-//                           fontSize: 19,
-//                           fontWeight: FontWeight.bold,
-//                           color: Colors.white,
-//                         ),
-//                       ),
-//                     ),
-//                   ],
-//                 ),
-//               ),
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
+                const Text(
+                  'Vị trí trên bản đồ',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                CourtMap(address: court.address),
+                const SizedBox(height: 16),
+
+                const AreaSearchBox(),
+                const SizedBox(height: 16),
+
+                CourtSelection(
+                  areas: areas,
+                  showAllReviews: showAllReviews,
+                  onToggleReviews: () {
+                    setState(() {
+                      showAllReviews = !showAllReviews;
+                    });
+                  },
+                  onEditReview: () {
+                    setState(() {
+                      showReviewModal = true;
+                    });
+                  },
+                  onDeleteReview: () async {
+                    if (userReview != null) {
+                      final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Xóa đánh giá'),
+                          content: const Text(
+                            'Bạn có chắc chắn muốn xóa đánh giá này?',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              child: const Text('Hủy'),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, true),
+                              child: const Text(
+                                'Xóa',
+                                style: TextStyle(color: Colors.red),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+
+                      if (confirmed == true) {
+                        try {
+                          final reviewController = ref.read(
+                            reviewControllerProvider,
+                          );
+                          await reviewController.deleteReview(userReview!.id!);
+
+                          _refreshData();
+
+                          Fluttertoast.showToast(
+                            msg: 'Xóa đánh giá thành công!',
+                            toastLength: Toast.LENGTH_SHORT,
+                            gravity: ToastGravity.BOTTOM,
+                            backgroundColor: Colors.green,
+                            textColor: Colors.white,
+                            fontSize: 18,
+                          );
+                        } catch (e) {
+                          Fluttertoast.showToast(
+                            msg: "Lỗi: ${e.toString()}",
+                            toastLength: Toast.LENGTH_SHORT,
+                            gravity: ToastGravity.BOTTOM,
+                            backgroundColor: Colors.red,
+                            textColor: Colors.white,
+                            fontSize: 16.0,
+                          );
+                        }
+                      }
+                    }
+                  },
+                  onCourtSelected: (index) {
+                    setState(() {
+                      selectedAreaIndex = index;
+                    });
+                  },
+                ),
+
+                ReviewsSection(
+                  reviews: reviews.map((r) {
+                    final map = r.toMap();
+                    final currentUserId =
+                        FirebaseAuth.instance.currentUser?.uid;
+                    final isOwner = r.userId == currentUserId;
+                    return {...map, 'isOwner': isOwner};
+                  }).toList(),
+                  showAllReviews: showAllReviews,
+                  onToggleReviews: () {
+                    setState(() {
+                      showAllReviews = !showAllReviews;
+                    });
+                  },
+                  onEditReview: () {
+                    setState(() {
+                      showReviewModal = true;
+                    });
+                  },
+                  onDeleteReview: () async {
+                    if (userReview != null) {
+                      final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Xóa đánh giá'),
+                          content: const Text(
+                            'Bạn có chắc chắn muốn xóa đánh giá này?',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              child: const Text('Hủy'),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, true),
+                              child: const Text(
+                                'Xóa',
+                                style: TextStyle(color: Colors.red),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+
+                      if (confirmed == true) {
+                        try {
+                          final reviewController = ref.read(
+                            reviewControllerProvider,
+                          );
+                          await reviewController.deleteReview(userReview!.id!);
+
+                          _refreshData();
+
+                          Fluttertoast.showToast(
+                            msg: 'Xóa đánh giá thành công!',
+                            toastLength: Toast.LENGTH_SHORT,
+                            gravity: ToastGravity.BOTTOM,
+                            backgroundColor: Colors.green,
+                            textColor: Colors.white,
+                            fontSize: 18,
+                          );
+                        } catch (e) {
+                          Fluttertoast.showToast(
+                            msg: "Lỗi: ${e.toString()}",
+                            toastLength: Toast.LENGTH_SHORT,
+                            gravity: ToastGravity.BOTTOM,
+                            backgroundColor: Colors.red,
+                            textColor: Colors.white,
+                            fontSize: 16.0,
+                          );
+                        }
+                      }
+                    }
+                  },
+                ),
+                const SizedBox(height: 80),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

@@ -20,11 +20,8 @@ class _CourtHeaderState extends State<CourtHeader> {
     return widget.court.images.isNotEmpty
         ? widget.court.images
         : widget.court.featuredImage != null
-            ? [widget.court.featuredImage!]
-            : [
-                'assets/images/court1.jpg',
-                'assets/images/court2.jpg',
-              ];
+        ? [widget.court.featuredImage!]
+        : ['assets/images/court4.jpg'];
   }
 
   void _toggleFavorite() {
@@ -42,9 +39,11 @@ class _CourtHeaderState extends State<CourtHeader> {
           body: GestureDetector(
             onTap: () => Navigator.pop(context),
             child: Center(
-              child: Image.asset(
+              child: Image.network(
                 _images[index],
                 fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) =>
+                    const Icon(Icons.error, color: Colors.red, size: 50),
               ),
             ),
           ),
@@ -70,10 +69,25 @@ class _CourtHeaderState extends State<CourtHeader> {
             itemBuilder: (context, index) {
               return GestureDetector(
                 onTap: () => _showFullScreenImage(index),
-                child: Image.asset(
+                child: Image.network(
                   _images[index],
                   fit: BoxFit.cover,
                   width: double.infinity,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    color: Colors.grey[300],
+                    child: const Icon(
+                      Icons.error,
+                      color: Colors.grey,
+                      size: 50,
+                    ),
+                  ),
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Container(
+                      color: Colors.grey[300],
+                      child: const Center(child: CircularProgressIndicator()),
+                    );
+                  },
                 ),
               );
             },

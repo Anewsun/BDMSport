@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/utils/amenity_icons.dart';
+import '../../../core/models/area_model.dart';
 
 class CourtSelection extends StatefulWidget {
-  final List<Map<String, dynamic>> courts;
+  final List<Area> areas;
   final bool showAllReviews;
   final VoidCallback onToggleReviews;
   final VoidCallback onEditReview;
@@ -11,7 +13,7 @@ class CourtSelection extends StatefulWidget {
 
   const CourtSelection({
     super.key,
-    required this.courts,
+    required this.areas,
     required this.showAllReviews,
     required this.onToggleReviews,
     required this.onEditReview,
@@ -31,9 +33,9 @@ class _CourtSelectionState extends State<CourtSelection> {
 
   @override
   Widget build(BuildContext context) {
-    final displayedCourts = showAllCourts
-        ? widget.courts
-        : widget.courts.take(initialCourtCount).toList();
+    final displayedAreas = showAllCourts
+        ? widget.areas
+        : widget.areas.take(initialCourtCount).toList();
 
     return Padding(
       padding: const EdgeInsets.all(12.0),
@@ -51,7 +53,7 @@ class _CourtSelectionState extends State<CourtSelection> {
             ),
           ),
 
-          if (displayedCourts.isEmpty)
+          if (displayedAreas.isEmpty)
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 20),
               child: Text(
@@ -60,11 +62,11 @@ class _CourtSelectionState extends State<CourtSelection> {
               ),
             )
           else
-            ...displayedCourts.asMap().entries.map(
+            ...displayedAreas.asMap().entries.map(
               (entry) => _buildCourtCard(entry.value, entry.key),
             ),
 
-          if (widget.courts.length > initialCourtCount)
+          if (widget.areas.length > initialCourtCount)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0),
               child: ElevatedButton(
@@ -89,7 +91,7 @@ class _CourtSelectionState extends State<CourtSelection> {
                     Text(
                       showAllCourts
                           ? 'Thu gọn'
-                          : 'Xem thêm (${widget.courts.length - initialCourtCount})',
+                          : 'Xem thêm (${widget.areas.length - initialCourtCount})',
                       style: const TextStyle(
                         color: Colors.black,
                         fontSize: 16,
@@ -113,12 +115,10 @@ class _CourtSelectionState extends State<CourtSelection> {
     );
   }
 
-  Widget _buildCourtCard(Map<String, dynamic> court, int index) {
+  Widget _buildCourtCard(Area area, int index) {
     final isSelected = selectedCourtIndex == index;
     final isExpanded = expandedCourts.contains(index);
-    final hasDiscount =
-        court['discountedPrice'] != null &&
-        court['discountedPrice'] < court['price'];
+    final hasDiscount = area.discountPercent > 0;
 
     return Card(
       color: Colors.white,
@@ -144,20 +144,26 @@ class _CourtSelectionState extends State<CourtSelection> {
         },
         child: Column(
           children: [
-            SizedBox(
-              height: 200,
-              child: PageView.builder(
-                itemCount: court['images'].length,
-                itemBuilder: (context, imgIndex) {
-                  return ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(12),
-                    ),
-                    child: Image.asset(
-                      court['images'][imgIndex],
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                    ),
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(12),
+              ),
+              child: Image.network(
+                area.image,
+                fit: BoxFit.cover,
+                width: double.infinity,
+                height: 200,
+                errorBuilder: (context, error, stackTrace) => Container(
+                  height: 200,
+                  color: Colors.grey[200],
+                  child: const Icon(Icons.error, color: Colors.grey),
+                ),
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return Container(
+                    height: 200,
+                    color: Colors.grey[200],
+                    child: const Center(child: CircularProgressIndicator()),
                   );
                 },
               ),
@@ -171,14 +177,16 @@ class _CourtSelectionState extends State<CourtSelection> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        court['name'],
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                      Expanded(
+                        child: Text(
+                          area.nameArea,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                       ),
                       IconButton(
                         icon: Icon(
@@ -203,7 +211,7 @@ class _CourtSelectionState extends State<CourtSelection> {
                         Padding(
                           padding: const EdgeInsets.only(right: 8.0),
                           child: Text(
-                            formatPrice(court['price']),
+                            formatPrice(area.price),
                             style: const TextStyle(
                               fontSize: 17,
                               color: Colors.grey,
@@ -222,10 +230,10 @@ class _CourtSelectionState extends State<CourtSelection> {
                         ),
                         child: Text(
                           hasDiscount
-                              ? '${formatPrice(court['discountedPrice'])}/giờ'
-                              : '${formatPrice(court['price'])}/giờ',
+                              ? '${formatPrice(area.discountedPrice)}/giờ'
+                              : '${formatPrice(area.price)}/giờ',
                           style: TextStyle(
-                            fontSize: 17,
+                            fontSize: 16,
                             fontWeight: FontWeight.bold,
                             color: hasDiscount ? Colors.red : Colors.blue,
                           ),
@@ -243,7 +251,7 @@ class _CourtSelectionState extends State<CourtSelection> {
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Text(
-                            '-${court['discountPercent']}%',
+                            '-${area.discountPercent}%',
                             style: const TextStyle(
                               fontSize: 13,
                               color: Colors.brown,
@@ -263,11 +271,11 @@ class _CourtSelectionState extends State<CourtSelection> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (court['description'] != null)
+                    if (area.description.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 8.0),
                         child: Text(
-                          court['description'],
+                          area.description,
                           style: const TextStyle(
                             fontSize: 16,
                             color: Colors.black,
@@ -278,17 +286,34 @@ class _CourtSelectionState extends State<CourtSelection> {
                       ),
 
                     _buildDetailRow(
-                      Icons.aspect_ratio,
-                      'Kích thước: ${court['size']}',
-                    ),
-                    _buildDetailRow(
                       Icons.sports_tennis_rounded,
-                      'Loại sân: ${court['type']}',
+                      'Loại sân: ${area.courtType}',
                     ),
-                    _buildDetailRow(
-                      Icons.lightbulb,
-                      'Hệ thống chiếu sáng: ${court['lighting']}',
-                    ),
+
+                    if (area.amenities.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Tiện nghi:',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 4,
+                              children: area.amenities
+                                  .map((amenity) => _buildAmenityChip(amenity))
+                                  .toList(),
+                            ),
+                          ],
+                        ),
+                      ),
 
                     const SizedBox(height: 12),
                     SizedBox(
@@ -344,6 +369,17 @@ class _CourtSelectionState extends State<CourtSelection> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildAmenityChip(String amenityName) {
+    final amenityIcon = getAmenityIcon(amenityName);
+
+    return Chip(
+      label: Text(amenityIcon.vietnameseName, style: const TextStyle(fontSize: 15)),
+      avatar: Icon(amenityIcon.icon, size: 18, color: amenityIcon.color),
+      backgroundColor: Colors.grey[100],
+      visualDensity: VisualDensity.compact,
     );
   }
 }
