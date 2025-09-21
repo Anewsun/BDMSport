@@ -1,20 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import '../../../core/models/court_model.dart';
 import '../../../core/widgets/custom_header.dart';
+import '../../../core/controllers/favorite_controller.dart';
+import '../../auth/controllers/sign_in_controller.dart';
 
-class CourtHeader extends StatefulWidget {
+class CourtHeader extends ConsumerStatefulWidget {
   final Court court;
 
   const CourtHeader({super.key, required this.court});
 
   @override
-  State<CourtHeader> createState() => _CourtHeaderState();
+  ConsumerState<CourtHeader> createState() => _CourtHeaderState();
 }
 
-class _CourtHeaderState extends State<CourtHeader> {
+class _CourtHeaderState extends ConsumerState<CourtHeader> {
   final PageController _pageController = PageController();
   int _currentIndex = 0;
-  bool _isFavorite = false;
+  bool _isLoadingFavorite = false;
 
   List<String> get _images {
     return widget.court.images.isNotEmpty
@@ -24,10 +28,59 @@ class _CourtHeaderState extends State<CourtHeader> {
         : ['assets/images/court4.jpg'];
   }
 
-  void _toggleFavorite() {
+  Future<void> _toggleFavorite() async {
+    final authState = ref.read(signInControllerProvider);
+    final userId = authState.user?.id;
+
+    if (userId == null) {
+      Fluttertoast.showToast(
+        msg: 'Vui lòng đăng nhập để thêm vào danh sách yêu thích',
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+        fontSize: 18,
+      );
+      return;
+    }
+
     setState(() {
-      _isFavorite = !_isFavorite;
+      _isLoadingFavorite = true;
     });
+
+    try {
+      final favoriteController = ref.read(favoriteControllerProvider);
+      await favoriteController.toggleFavorite(userId, widget.court.id);
+
+      ref.invalidate(favoriteCourtIdsProvider(userId));
+      ref.invalidate(
+        isFavoriteProvider((userId: userId, courtId: widget.court.id)),
+      );
+
+      Fluttertoast.showToast(
+        msg: 'Đã cập nhật danh sách yêu thích',
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Colors.green,
+        textColor: Colors.white,
+        fontSize: 18,
+      );
+
+      setState(() {});
+    } catch (e) {
+      Fluttertoast.showToast(
+        msg: 'Có lỗi xảy ra: ${e.toString()}',
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+        fontSize: 18,
+      );
+    } finally {
+      setState(() {
+        _isLoadingFavorite = false;
+      });
+    }
   }
 
   void _showFullScreenImage(int index) {
@@ -54,6 +107,15 @@ class _CourtHeaderState extends State<CourtHeader> {
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(signInControllerProvider);
+    final userId = authState.user?.id;
+
+    final isFavoriteAsync = userId != null
+        ? ref.watch(
+            isFavoriteProvider((userId: userId, courtId: widget.court.id)),
+          )
+        : const AsyncValue.data(false);
+
     return Stack(
       children: [
         SizedBox(
@@ -102,13 +164,29 @@ class _CourtHeaderState extends State<CourtHeader> {
             title: '',
             showBackIcon: true,
             onBackPress: () => Navigator.pop(context),
-            rightComponent: IconButton(
-              onPressed: _toggleFavorite,
-              icon: Icon(
-                _isFavorite ? Icons.favorite : Icons.favorite_border,
-                color: _isFavorite ? Colors.red : Colors.blueGrey,
-              ),
-            ),
+            rightComponent: _isLoadingFavorite
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : IconButton(
+                    onPressed: _toggleFavorite,
+                    icon: isFavoriteAsync.when(
+                      loading: () => const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      error: (error, stack) =>
+                          const Icon(Icons.error, color: Colors.red),
+                      data: (isFavorite) => Icon(
+                        isFavorite ? Icons.favorite : Icons.favorite_border,
+                        color: isFavorite ? Colors.red : Colors.white,
+                        size: 28,
+                      ),
+                    ),
+                  ),
           ),
         ),
 
@@ -128,7 +206,7 @@ class _CourtHeaderState extends State<CourtHeader> {
                   shape: BoxShape.circle,
                   color: _currentIndex == index
                       ? Colors.white
-                      : Color.fromRGBO(255, 255, 255, 0.8),
+                      : const Color.fromRGBO(255, 255, 255, 0.8),
                 ),
               ),
             ),

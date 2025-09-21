@@ -1,3 +1,4 @@
+// home_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -8,6 +9,7 @@ import '../../../core/widgets/search_box.dart';
 import '../../../navigation/bottom_nav_bar.dart';
 import '../../auth/controllers/sign_in_controller.dart';
 import '../../../core/controllers/court_controller.dart';
+import '../../../core/controllers/favorite_controller.dart';
 import '../widgets/discounted_courts_section.dart';
 import '../widgets/notification_icon_with_badge.dart';
 import '../widgets/popular_locations_section.dart';
@@ -128,6 +130,48 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     });
   }
 
+  Future<void> _handleToggleFavorite(String courtId) async {
+    final authState = ref.read(signInControllerProvider);
+    final userId = authState.user?.id;
+
+    if (userId == null) {
+      Fluttertoast.showToast(
+        msg: 'Vui lòng đăng nhập để thêm vào danh sách yêu thích',
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+        fontSize: 18,
+      );
+      return;
+    }
+
+    try {
+      final favoriteController = ref.read(favoriteControllerProvider);
+      await favoriteController.toggleFavorite(userId, courtId);
+
+      ref.invalidate(favoriteCourtIdsProvider(userId));
+
+      Fluttertoast.showToast(
+        msg: 'Đã cập nhật danh sách yêu thích',
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Colors.green,
+        textColor: Colors.white,
+        fontSize: 18,
+      );
+    } catch (e) {
+      Fluttertoast.showToast(
+        msg: 'Có lỗi xảy ra: ${e.toString()}',
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+        fontSize: 18,
+      );
+    }
+  }
+
   @override
   void dispose() {
     _subscription.close();
@@ -139,6 +183,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(signInControllerProvider);
     final userName = authState.user?.name ?? 'Khách';
+    final userId = authState.user?.id;
 
     final loginSuccess = GoRouterState.of(
       context,
@@ -244,6 +289,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           courts: _currentPageCourts,
                           isDiscounted: _isDiscounted,
                           onRetry: _loadCourts,
+                          userId: userId,
+                          onToggleFavorite: _handleToggleFavorite,
                         ),
                 ),
 

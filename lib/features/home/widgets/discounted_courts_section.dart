@@ -1,24 +1,36 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/models/court_model.dart';
 import '../../../core/widgets/court_card.dart';
+import '../../../core/controllers/favorite_controller.dart';
 
-class DiscountedCourtsSection extends StatelessWidget {
+class DiscountedCourtsSection extends ConsumerWidget {
   final List<Court> courts;
   final bool isDiscounted;
   final VoidCallback? onRetry;
+  final String? userId;
+  final Function(String)? onToggleFavorite;
 
   const DiscountedCourtsSection({
     super.key,
     required this.courts,
     this.isDiscounted = true,
     this.onRetry,
+    this.userId,
+    this.onToggleFavorite,
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final favoriteCourtIdsAsync = userId != null
+        ? ref.watch(favoriteCourtIdsProvider(userId!))
+        : const AsyncValue.data([]);
+
     return Column(
-      key: ValueKey('courts-section-${courts.length}'),
+      key: ValueKey(
+        'courts-section-${courts.length}-${DateTime.now().millisecondsSinceEpoch}',
+      ),
       children: [
         Container(
           padding: const EdgeInsets.fromLTRB(15, 25, 15, 10),
@@ -62,39 +74,50 @@ class DiscountedCourtsSection extends StatelessWidget {
             ),
           )
         else
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 15),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-              childAspectRatio: 0.6,
-            ),
-            itemCount: courts.length,
-            itemBuilder: (context, index) {
-              final court = courts[index];
-
-              final map = <String, dynamic>{
-                'name': court.name,
-                'address': court.address,
-                'featuredImageUrl': court.featuredImage,
-                'rating': court.rating,
-                'lowestPrice': court.lowestPrice,
-                'lowestDiscountedPrice': court.lowestDiscountedPrice,
-                'highestDiscountPercent': court.highestDiscountPercent,
-              };
-
-              return GestureDetector(
-                onTap: () {
-                  context.push('/court-detail/${court.id}');
-                },
-                child: CourtCard(
-                  court: map,
-                  showDiscountBadge:
-                      isDiscounted && court.highestDiscountPercent > 0,
+          favoriteCourtIdsAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (error, stack) => Center(child: Text('Lỗi: $error')),
+            data: (favoriteCourtIds) {
+              return GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 15),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                  childAspectRatio: 0.6,
                 ),
+                itemCount: courts.length,
+                itemBuilder: (context, index) {
+                  final court = courts[index];
+                  final isFavorite = favoriteCourtIds.contains(court.id);
+
+                  final map = <String, dynamic>{
+                    'name': court.name,
+                    'address': court.address,
+                    'featuredImageUrl': court.featuredImage,
+                    'rating': court.rating,
+                    'lowestPrice': court.lowestPrice,
+                    'lowestDiscountedPrice': court.lowestDiscountedPrice,
+                    'highestDiscountPercent': court.highestDiscountPercent,
+                  };
+
+                  return GestureDetector(
+                    onTap: () {
+                      context.push('/court-detail/${court.id}');
+                    },
+                    child: CourtCard(
+                      court: map,
+                      showDiscountBadge:
+                          isDiscounted && court.highestDiscountPercent > 0,
+                      isFavorite: isFavorite,
+                      onToggleFavorite: userId != null
+                          ? () => onToggleFavorite?.call(court.id)
+                          : null,
+                    ),
+                  );
+                },
               );
             },
           ),
