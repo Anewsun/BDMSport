@@ -36,6 +36,7 @@ lib/firebase_options.dart
 firebase.json
 /android/app/google-services.json
 /android/app/src/main/res/values/strings.xml
+.env
 # Symbolication related
 app.*.symbols
 

@@ -31,6 +31,8 @@ dependencies:
   latlong2: ^0.9.1
   geocoding: ^4.0.0
   cached_network_image: ^3.4.1
+  flutter_paypal_payment: ^1.0.8
+  flutter_dotenv: ^6.0.0
 
 dev_dependencies:
   flutter_test:
@@ -42,4 +44,5 @@ flutter:
   assets:
     - assets/icons/
     - assets/images/
+    - assets/.env
   uses-material-design: true

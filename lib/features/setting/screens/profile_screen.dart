@@ -1,7 +1,9 @@
 import 'package:bdm_sport/features/setting/controllers/setting_controller.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/controllers/paypal_controller.dart';
 import '../../../core/widgets/custom_header.dart';
 import '../../../core/widgets/loading_overlay.dart';
 import '../widgets/profile_section.dart';
@@ -46,10 +48,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     try {
       await ref
           .read(settingControllerProvider.notifier)
-          .updateUserInfo(
-            userId: currentUser.id,
-            updatedData: updatedData,
-          );
+          .updateUserInfo(userId: currentUser.id, updatedData: updatedData);
 
       _loadUserData();
     } finally {
@@ -57,6 +56,63 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         setState(() => loading = false);
       }
     }
+  }
+
+  Future<int?> _showDepositDialog(BuildContext context) async {
+    final controller = TextEditingController();
+    return showDialog<int>(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: const [
+            Icon(Icons.account_balance_wallet, color: Colors.blueAccent),
+            SizedBox(width: 8),
+            Text("Nạp tiền", style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: "Số tiền (VNĐ)",
+                hintText: "Ví dụ: 100000",
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                prefixIcon: const Icon(Icons.money, color: Colors.green),
+              ),
+            ),
+          ],
+        ),
+        actionsPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Hủy"),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              final amount = int.tryParse(controller.text.trim());
+              if (amount != null && amount > 0) {
+                Navigator.pop(context, amount);
+              }
+            },
+            icon: const Icon(Icons.check_circle),
+            label: const Text("Xác nhận"),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.lightBlue,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -94,7 +150,61 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       address: user.address ?? '',
                       onSave: onSaveChanges,
                     ),
-                    TierSection(tier: user.tier, balance: user.balance),
+
+                    StreamBuilder<DocumentSnapshot>(
+                      stream: FirebaseFirestore.instance
+                          .collection("users")
+                          .doc(user.id)
+                          .snapshots(),
+                      builder: (context, snapshot) {
+                        if (!snapshot.hasData) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        }
+                        final data =
+                            snapshot.data!.data() as Map<String, dynamic>;
+                        final balance = data["balance"] ?? 0;
+                        final tier = data["tier"] ?? user.tier;
+
+                        return TierSection(tier: tier, balance: balance);
+                      },
+                    ),
+                    SizedBox(height: 10),
+                    Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 220),
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            final amount = await _showDepositDialog(context);
+                            if (amount != null) {
+                              await PaymentController().depositWithPayPal(
+                                context,
+                                amount,
+                              );
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blueAccent,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(25),
+                            ),
+                          ),
+                          child: const Text(
+                            "Nạp tiền ngay",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
