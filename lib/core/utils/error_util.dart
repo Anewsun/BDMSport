@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 String getFriendlyErrorMessage(dynamic error) {
   if (error is FirebaseAuthException) {
@@ -23,9 +24,24 @@ String getFriendlyErrorMessage(dynamic error) {
         return 'Vui lòng nhập mật khẩu';
       case 'account-exists-with-different-credential':
         return 'Email này đã được sử dụng với phương thức đăng nhập khác.';
+      case 'account-reauth-failed':
+      case 'account-reauthentication-failed':
+        return 'Xác thực lại tài khoản thất bại. Vui lòng thử lại.';
+      case 'user-cancelled':
+        return 'Đăng nhập bị hủy bỏ.';
       default:
         return 'Đã xảy ra lỗi không xác định.';
     }
   }
+
+  if (error is GoogleSignInException) {
+    switch (error.code) {
+      case GoogleSignInExceptionCode.canceled:
+        return 'Đăng nhập bằng Google đã bị hủy bỏ.';
+      default:
+        return 'Lỗi đăng nhập Google. Vui lòng thử lại.';
+    }
+  }
+
   return error.toString();
 }

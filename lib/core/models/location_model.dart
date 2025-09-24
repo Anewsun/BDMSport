@@ -22,7 +22,7 @@ class LocationModel {
     return LocationModel(
       id: doc.id,
       name: data['name'] ?? '',
-      image: data['image'] ?? '',
+      image: (data['image'] ?? '') as String,
       createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
       updatedAt: (data['updatedAt'] as Timestamp?)?.toDate(),
     );

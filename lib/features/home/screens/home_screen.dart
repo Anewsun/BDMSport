@@ -1,4 +1,4 @@
-// home_screen.dart
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -34,6 +34,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   late ProviderSubscription<AuthState> _subscription;
   final ScrollController _scrollController = ScrollController();
+
+  Map<String, dynamic> _encodeSearchParams(Map<String, dynamic> params) {
+    final encoded = Map<String, dynamic>.from(params);
+
+    if (encoded['startTime'] is DateTime) {
+      encoded['startTime'] = (encoded['startTime'] as DateTime)
+          .toIso8601String();
+    }
+    if (encoded['endTime'] is DateTime) {
+      encoded['endTime'] = (encoded['endTime'] as DateTime).toIso8601String();
+    }
+
+    return encoded;
+  }
 
   @override
   void initState() {
@@ -264,9 +278,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
 
                 SliverToBoxAdapter(
-                  child: const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 15),
-                    child: SearchBox(),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 15),
+                    child: SearchBox(
+                      onSearch: (searchParams) {
+                        final encodedParams = _encodeSearchParams(searchParams);
+
+                        final jsonString = jsonEncode(encodedParams);
+                        final base64Params = base64Url.encode(
+                          utf8.encode(jsonString),
+                        );
+
+                        context.push('/search-results?params=$base64Params');
+                      },
+                    ),
                   ),
                 ),
 

@@ -27,7 +27,7 @@ AmenityIcon getAmenityIcon(String amenityName) {
     'light': [Icons.lightbulb, Colors.yellow, 'Đèn chiếu sáng'],
     'carpet': [Icons.carpenter, Colors.brown, 'Thảm'],
     'racket': [Icons.sports_tennis, Colors.green, 'Thuê vợt'],
-    'shower': [Icons.shower, Colors.blue, 'Vòi hoa sen'],
+    'shower': [Icons.shower, Colors.blue, 'Phòng tắm'],
   };
 
   for (var entry in amenityIcons.entries) {

@@ -38,7 +38,7 @@ class DateTimePickerRow extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: Colors.grey.shade200,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.black),
+                    border: Border.all(color: Colors.black, width: 2),
                   ),
                   child: Row(
                     children: [
@@ -66,7 +66,7 @@ class DateTimePickerRow extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: Colors.grey.shade200,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.black),
+                    border: Border.all(color: Colors.black, width: 2),
                   ),
                   child: Row(
                     children: [

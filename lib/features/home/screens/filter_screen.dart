@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_vector_icons/flutter_vector_icons.dart';
+import '../../../core/utils/amenity_icons.dart';
 import '../../../core/widgets/custom_header.dart';
 
 class FilterScreen extends StatefulWidget {
@@ -28,14 +28,23 @@ class _FilterScreenState extends State<FilterScreen> {
     'Sân tập luyện',
   ];
 
-  final List<Map<String, dynamic>> _amenities = [
-    {'id': '1', 'name': 'Điều hòa', 'icon': Ionicons.snow},
-    {'id': '2', 'name': 'Quạt mát', 'icon': Ionicons.flower},
-    {'id': '3', 'name': 'Thảm lót', 'icon': Ionicons.layers},
-    {'id': '4', 'name': 'Vòi sen', 'icon': Ionicons.water},
-    {'id': '5', 'name': 'Chỗ đỗ xe', 'icon': Ionicons.car},
-    {'id': '6', 'name': 'Quán nước', 'icon': Ionicons.cafe},
-    {'id': '7', 'name': 'WC riêng', 'icon': Ionicons.man},
+  final List<String> _amenityIds = [
+    'smoking',
+    'wc',
+    'net',
+    'pet',
+    'parking',
+    'fan',
+    'drink',
+    'air conditioner',
+    'yard',
+    'wifi',
+    'food',
+    'children',
+    'light',
+    'carpet',
+    'racket',
+    'shower',
   ];
 
   @override
@@ -252,14 +261,16 @@ class _FilterScreenState extends State<FilterScreen> {
                             mainAxisSpacing: 8,
                             crossAxisSpacing: 8,
                           ),
-                      itemCount: _amenities.length,
+                      itemCount: _amenityIds.length,
                       itemBuilder: (context, index) {
-                        final amenity = _amenities[index];
+                        final amenityId = _amenityIds[index];
+                        final amenityIcon = getAmenityIcon(amenityId);
                         final isSelected = _selectedAmenities.contains(
-                          amenity['id'],
+                          amenityId,
                         );
+
                         return GestureDetector(
-                          onTap: () => _toggleAmenity(amenity['id']),
+                          onTap: () => _toggleAmenity(amenityId),
                           child: Container(
                             decoration: BoxDecoration(
                               color: isSelected
@@ -275,10 +286,14 @@ class _FilterScreenState extends State<FilterScreen> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(amenity['icon'], size: 24),
+                                Icon(
+                                  amenityIcon.icon,
+                                  size: 24,
+                                  color: amenityIcon.color,
+                                ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  amenity['name'],
+                                  amenityIcon.vietnameseName,
                                   textAlign: TextAlign.center,
                                   style: const TextStyle(fontSize: 14),
                                 ),

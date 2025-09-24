@@ -51,7 +51,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/filter', builder: (_, _) => const FilterScreen()),
       GoRoute(
         path: '/search-results',
-        builder: (_, _) => const SearchResultScreen(),
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return SearchResultScreen(searchParams: extra);
+        },
       ),
       GoRoute(
         path: '/court-detail/:courtId',

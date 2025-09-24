@@ -10,6 +10,7 @@ class SearchBoxContainer extends StatelessWidget {
     return Material(
       elevation: 6,
       borderRadius: BorderRadius.circular(15),
+      clipBehavior: Clip.none,
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
