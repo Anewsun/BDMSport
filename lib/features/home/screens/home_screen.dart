@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/controllers/notification_controller.dart';
 import '../../../core/models/court_model.dart';
 import '../../../core/widgets/pagination_controls.dart';
 import '../../../core/widgets/search_box.dart';
@@ -34,6 +35,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   late ProviderSubscription<AuthState> _subscription;
   final ScrollController _scrollController = ScrollController();
+  final unreadNotificationsCountProvider = StreamProvider<int>((ref) {
+    final userId = ref.watch(signInControllerProvider).user?.id;
+    if (userId == null) return Stream.value(0);
+
+    final notificationController = ref.read(notificationControllerProvider);
+    return notificationController.getUnreadCount(userId);
+  });
 
   Map<String, dynamic> _encodeSearchParams(Map<String, dynamic> params) {
     final encoded = Map<String, dynamic>.from(params);
@@ -198,6 +206,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final authState = ref.watch(signInControllerProvider);
     final userName = authState.user?.name ?? 'Khách';
     final userId = authState.user?.id;
+    final unreadCountAsync = ref.watch(unreadNotificationsCountProvider);
 
     final loginSuccess = GoRouterState.of(
       context,
@@ -252,7 +261,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           ],
                         ),
                         NotificationIconWithBadge(
-                          notificationCount: 3,
+                          notificationCount: unreadCountAsync.when(
+                            data: (count) => count,
+                            loading: () => 0,
+                            error: (_, _) => 0,
+                          ),
                           onPressed: () {
                             context.push('/notification');
                           },
