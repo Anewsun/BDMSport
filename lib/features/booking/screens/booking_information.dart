@@ -5,6 +5,7 @@ import '../../../core/widgets/custom_header.dart';
 import '../../../core/widgets/custom_stepper.dart';
 import '../widgets/booking_info_step.dart';
 import '../widgets/customer_info_step.dart';
+import '../widgets/voucher_selector.dart';
 
 class BadmintonCourtBookingScreen extends StatefulWidget {
   const BadmintonCourtBookingScreen({super.key});
@@ -31,26 +32,111 @@ class BadmintonCourtBookingScreenState
     'imageUrl': null,
   };
 
+  final List<Voucher> _vouchers = [
+    Voucher(
+      id: '1',
+      code: 'GIAM20K',
+      name: 'Giảm 20K',
+      description: 'Giảm 20.000đ cho đơn từ 100.000đ',
+      discountValue: 20000,
+      discountType: 'fixed',
+      minOrderValue: 100000,
+    ),
+    Voucher(
+      id: '2',
+      code: 'GIAM10%',
+      name: 'Giảm 10%',
+      description: 'Giảm 10% tối đa 50.000đ',
+      discountValue: 10,
+      discountType: 'percentage',
+      maxDiscount: 50000,
+    ),
+    Voucher(
+      id: '3',
+      code: 'HOTDEAL',
+      name: 'Giảm 30%',
+      description: 'Giảm 30% cho khách hàng mới',
+      discountValue: 30,
+      discountType: 'percentage',
+      maxDiscount: 100000,
+    ),
+  ];
+
   DateTime _startTime = DateTime.now();
   DateTime _endTime = DateTime.now().add(const Duration(hours: 1));
   final TextEditingController _startTimeController = TextEditingController();
   final TextEditingController _endTimeController = TextEditingController();
-  bool _earlyCheckIn = false;
-  bool _lateCheckOut = false;
-  String specialRequests = '';
 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
-  bool _bookForOthers = false;
-  final TextEditingController _guestNameController = TextEditingController();
-  final TextEditingController _guestPhoneController = TextEditingController();
+
+  Voucher? _selectedVoucher;
+  double _originalPrice = 150000.0;
+  double _finalPrice = 15000.0;
+
+  bool _validateAllFields = false;
 
   @override
   void initState() {
     super.initState();
     _startTimeController.text = formatDateTime(_startTime);
     _endTimeController.text = formatDateTime(_endTime);
+    _calculatePrice();
+  }
+
+  bool get _isCustomerInfoValid {
+    return _nameController.text.isNotEmpty &&
+        _emailController.text.isNotEmpty &&
+        RegExp(
+          r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+        ).hasMatch(_emailController.text) &&
+        _phoneController.text.isNotEmpty &&
+        RegExp(r'^\d{10}$').hasMatch(_phoneController.text);
+  }
+
+  void _onValidationChanged() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
+
+  void _calculatePrice() {
+    final double hours = _endTime.difference(_startTime).inMinutes / 60.0;
+    double totalPrice = _originalPrice * hours;
+
+    if (_selectedVoucher != null) {
+      double discount = 0;
+
+      if (_selectedVoucher!.discountType == 'percentage') {
+        discount = totalPrice * (_selectedVoucher!.discountValue / 100);
+        if (_selectedVoucher!.maxDiscount != null &&
+            discount > _selectedVoucher!.maxDiscount!) {
+          discount = _selectedVoucher!.maxDiscount!;
+        }
+      } else {
+        discount = _selectedVoucher!.discountValue;
+      }
+
+      if (_selectedVoucher!.minOrderValue == null ||
+          totalPrice >= _selectedVoucher!.minOrderValue!) {
+        totalPrice -= discount;
+        if (totalPrice < 0) totalPrice = 0;
+      }
+    }
+
+    setState(() {
+      _finalPrice = totalPrice / hours;
+    });
+  }
+
+  void _onVoucherSelected(Voucher? voucher) {
+    setState(() {
+      _selectedVoucher = voucher;
+    });
+    _calculatePrice();
   }
 
   @override
@@ -60,26 +146,11 @@ class BadmintonCourtBookingScreenState
     _nameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
-    _guestNameController.dispose();
-    _guestPhoneController.dispose();
     _pageController.dispose();
     super.dispose();
   }
 
   bool get _isBookingInfoValid => _endTime.isAfter(_startTime);
-
-  bool get _isCustomerInfoValid {
-    if (_nameController.text.isEmpty ||
-        _phoneController.text.isEmpty ||
-        !RegExp(r'^\d{10}$').hasMatch(_phoneController.text)) {
-      return false;
-    }
-    if (_bookForOthers) {
-      return _guestNameController.text.isNotEmpty &&
-          RegExp(r'^\d{10}$').hasMatch(_guestPhoneController.text);
-    }
-    return true;
-  }
 
   Future<void> _selectDateTime(BuildContext context, bool isStartTime) async {
     final DateTime? pickedDate = await showDatePicker(
@@ -120,11 +191,35 @@ class BadmintonCourtBookingScreenState
           _endTimeController.text = formatDateTime(_endTime);
         }
       });
+      _calculatePrice();
     }
   }
 
   void _handleContinue() {
-    if (_currentStep == 1 && !_isBookingInfoValid) {
+    if (_currentStep == 1) {
+      setState(() {
+        _validateAllFields = true;
+      });
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_isCustomerInfoValid) {
+          _pageController.nextPage(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+          );
+          setState(() => _currentStep = 2);
+        } else {
+          Fluttertoast.showToast(
+            msg: 'Vui lòng điền đầy đủ thông tin hợp lệ',
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            backgroundColor: Colors.yellow,
+            textColor: Colors.black,
+            fontSize: 16,
+          );
+        }
+      });
+    } else if (_currentStep == 2 && !_isBookingInfoValid) {
       Fluttertoast.showToast(
         msg: 'Vui lòng chọn thời gian hợp lệ',
         toastLength: Toast.LENGTH_SHORT,
@@ -134,27 +229,7 @@ class BadmintonCourtBookingScreenState
         fontSize: 16,
       );
       return;
-    }
-
-    if (_currentStep == 2 && !_isCustomerInfoValid) {
-      Fluttertoast.showToast(
-        msg: 'Vui lòng điền đầy đủ thông tin hợp lệ',
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-        backgroundColor: Colors.yellow,
-        textColor: Colors.black,
-        fontSize: 16,
-      );
-      return;
-    }
-
-    if (_currentStep == 1) {
-      _pageController.nextPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-      setState(() => _currentStep = 2);
-    } else {
+    } else if (_currentStep == 2) {
       _showConfirmationDialog();
     }
   }
@@ -179,6 +254,7 @@ class BadmintonCourtBookingScreenState
                 gravity: ToastGravity.BOTTOM,
                 backgroundColor: Colors.green,
                 textColor: Colors.white,
+                fontSize: 18,
               );
             },
             child: const Text('Xác nhận'),
@@ -197,8 +273,8 @@ class BadmintonCourtBookingScreenState
           children: [
             CustomHeader(
               title: _currentStep == 1
-                  ? 'Thông tin đặt sân'
-                  : 'Thông tin khách hàng',
+                  ? 'Thông tin khách hàng'
+                  : 'Thông tin đặt sân',
               onBackPress: () {
                 if (_currentStep == 1) {
                   Navigator.pop(context);
@@ -213,7 +289,7 @@ class BadmintonCourtBookingScreenState
               showBackIcon: true,
             ),
             CustomStepper(
-              steps: const ['Thông tin đặt sân', 'Xác nhận người đặt'],
+              steps: const ['Xác nhận người đặt', 'Thông tin đặt sân'],
               currentStep: _currentStep,
             ),
             Expanded(
@@ -221,6 +297,13 @@ class BadmintonCourtBookingScreenState
                 controller: _pageController,
                 physics: const NeverScrollableScrollPhysics(),
                 children: [
+                  CustomerInfoStep(
+                    nameController: _nameController,
+                    emailController: _emailController,
+                    phoneController: _phoneController,
+                    onValidationChanged: _onValidationChanged,
+                    validateAll: _validateAllFields,
+                  ),
                   BookingInfoStep(
                     courtData: _courtData,
                     areaData: _areaData,
@@ -228,27 +311,13 @@ class BadmintonCourtBookingScreenState
                     endTime: _endTime,
                     startTimeController: _startTimeController,
                     endTimeController: _endTimeController,
-                    earlyCheckIn: _earlyCheckIn,
-                    lateCheckOut: _lateCheckOut,
-                    specialRequests: specialRequests,
                     onStartTimeTap: () => _selectDateTime(context, true),
                     onEndTimeTap: () => _selectDateTime(context, false),
-                    onEarlyCheckInChanged: (value) =>
-                        setState(() => _earlyCheckIn = value),
-                    onLateCheckOutChanged: (value) =>
-                        setState(() => _lateCheckOut = value),
-                    onSpecialRequestsChanged: (value) =>
-                        setState(() => specialRequests = value),
-                  ),
-                  CustomerInfoStep(
-                    nameController: _nameController,
-                    emailController: _emailController,
-                    phoneController: _phoneController,
-                    bookForOthers: _bookForOthers,
-                    guestNameController: _guestNameController,
-                    guestPhoneController: _guestPhoneController,
-                    onBookForOthersChanged: (value) =>
-                        setState(() => _bookForOthers = value),
+                    vouchers: _vouchers,
+                    selectedVoucher: _selectedVoucher,
+                    onVoucherSelected: _onVoucherSelected,
+                    originalPrice: _originalPrice,
+                    finalPrice: _finalPrice,
                   ),
                 ],
               ),
@@ -259,8 +328,8 @@ class BadmintonCourtBookingScreenState
                 onPressed: _handleContinue,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _currentStep == 1
-                      ? (_isBookingInfoValid ? Colors.blue : Colors.grey)
-                      : (_isCustomerInfoValid ? Colors.blue : Colors.grey),
+                      ? (_isCustomerInfoValid ? Colors.blue : Colors.grey)
+                      : (_isBookingInfoValid ? Colors.blue : Colors.grey),
                   minimumSize: const Size(double.infinity, 50),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(25),

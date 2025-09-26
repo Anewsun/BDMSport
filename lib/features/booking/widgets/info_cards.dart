@@ -99,13 +99,6 @@ class CustomerInfoCard extends StatelessWidget {
               label: 'Điện thoại',
               value: booking['contactInfo']?['phone'] ?? 'Không có thông tin',
             ),
-            DetailRowWidget(
-              icon: Icons.info,
-              label: 'Loại đặt sân',
-              value: booking['bookingFor'] == 'self'
-                  ? 'Tự đặt cho mình'
-                  : 'Đặt cho người khác',
-            ),
           ],
         ),
       ),
@@ -140,16 +133,21 @@ class PaymentInfoCard extends StatelessWidget {
             const SizedBox(height: 12),
             DetailRowWidget(
               icon: Icons.attach_money,
-              label: 'Tổng tiền',
-              value: formatPrice(booking['finalPrice'] ?? 0),
+              label: 'Giá gốc',
+              value: formatPrice(booking['originalPrice'] ?? 0),
+              valueStyle: const TextStyle(decoration: TextDecoration.lineThrough),
+            ),
+            DetailRowWidget(
+              icon: Icons.attach_money,
+              label: 'Giảm giá',
+              value: formatPrice(booking['discountAmount'] ?? 0),
               valueStyle: const TextStyle(fontWeight: FontWeight.bold),
             ),
             DetailRowWidget(
-              icon: Icons.payment,
-              label: 'Phương thức',
-              value: booking['paymentMethod'] == 'cash'
-                  ? 'Tiền mặt'
-                  : 'Chuyển khoản',
+              icon: Icons.attach_money,
+              label: 'Tổng tiền',
+              value: formatPrice(booking['finalPrice'] ?? 0),
+              valueStyle: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
             ),
             DetailRowWidget(
               icon: Icons.info,
@@ -164,47 +162,6 @@ class PaymentInfoCard extends StatelessWidget {
                   : booking['paymentStatus'] == 'pending'
                   ? Colors.amber
                   : Colors.red,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class SpecialRequestsCard extends StatelessWidget {
-  final Map<String, dynamic> booking;
-
-  const SpecialRequestsCard({super.key, required this.booking});
-
-  @override
-  Widget build(BuildContext context) {
-    if (booking['specialRequests'] == null) return const SizedBox.shrink();
-
-    return Card(
-      elevation: 1,
-      color: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Yêu cầu đặc biệt',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF003366),
-              ),
-            ),
-            const SizedBox(height: 12),
-            DetailRowWidget(
-              icon: Icons.note,
-              label: 'Ghi chú',
-              value:
-                  booking['specialRequests']['additionalRequests'] ??
-                  'Không có yêu cầu đặc biệt',
             ),
           ],
         ),

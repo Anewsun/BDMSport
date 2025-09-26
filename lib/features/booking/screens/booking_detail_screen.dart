@@ -43,12 +43,11 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
         'checkIn': DateTime.now().add(const Duration(days: 1)),
         'checkOut': DateTime.now().add(const Duration(days: 1, hours: 2)),
         'status': 'completed',
+        'originalPrice': 120000,
+        'discountAmount': 40000,
         'finalPrice': 200000,
         'contactInfo': {'name': 'Nguyễn Văn An', 'phone': '0987654321'},
-        'bookingFor': 'self',
-        'paymentMethod': 'cash',
         'paymentStatus': 'paid',
-        'specialRequests': {'additionalRequests': 'Cần 2 chai nước miễn phí'},
       };
 
       setState(() {
@@ -129,8 +128,6 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                     const SizedBox(height: 16),
                     PaymentInfoCard(booking: booking),
                     const SizedBox(height: 16),
-                    SpecialRequestsCard(booking: booking),
-                    const SizedBox(height: 16),
 
                     if (booking['status'] == 'confirmed' ||
                         booking['status'] == 'pending')
@@ -164,7 +161,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                                       toastLength: Toast.LENGTH_SHORT,
                                       gravity: ToastGravity.BOTTOM,
                                       backgroundColor: Colors.green,
-                                      textColor: Colors.white
+                                      textColor: Colors.white,
                                     );
                                   },
                                 ),

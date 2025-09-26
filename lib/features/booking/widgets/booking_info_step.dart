@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/widgets/date_time_picker_row.dart';
 import 'court_info_card.dart';
-import 'special_requests_section.dart';
+import 'voucher_selector.dart';
 
 class BookingInfoStep extends StatelessWidget {
   final Map<String, dynamic> courtData;
@@ -10,14 +10,14 @@ class BookingInfoStep extends StatelessWidget {
   final DateTime endTime;
   final TextEditingController startTimeController;
   final TextEditingController endTimeController;
-  final bool earlyCheckIn;
-  final bool lateCheckOut;
-  final String specialRequests;
   final VoidCallback onStartTimeTap;
   final VoidCallback onEndTimeTap;
-  final ValueChanged<bool> onEarlyCheckInChanged;
-  final ValueChanged<bool> onLateCheckOutChanged;
-  final ValueChanged<String> onSpecialRequestsChanged;
+  final List<Voucher> vouchers;
+  final Voucher? selectedVoucher;
+  final Function(Voucher?) onVoucherSelected;
+  final double? originalPrice;
+  final double? finalPrice;
+  final bool enabled;
 
   const BookingInfoStep({
     super.key,
@@ -27,14 +27,14 @@ class BookingInfoStep extends StatelessWidget {
     required this.endTime,
     required this.startTimeController,
     required this.endTimeController,
-    required this.earlyCheckIn,
-    required this.lateCheckOut,
-    required this.specialRequests,
     required this.onStartTimeTap,
     required this.onEndTimeTap,
-    required this.onEarlyCheckInChanged,
-    required this.onLateCheckOutChanged,
-    required this.onSpecialRequestsChanged,
+    required this.vouchers,
+    this.selectedVoucher,
+    required this.onVoucherSelected,
+    this.originalPrice,
+    this.finalPrice,
+    this.enabled = false,
   });
 
   @override
@@ -44,13 +44,20 @@ class BookingInfoStep extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CourtInfoCard(courtData: courtData, areaData: areaData),
+          CourtInfoCard(
+            courtData: courtData,
+            areaData: areaData,
+            originalPrice: originalPrice,
+            finalPrice: finalPrice,
+            showPriceComparison: true,
+          ),
           const SizedBox(height: 24),
           DateTimePickerRow(
             label: 'Thời gian bắt đầu',
             dateTime: startTime,
             onDateTap: onStartTimeTap,
             onTimeTap: onStartTimeTap,
+            enabled: enabled
           ),
           const SizedBox(height: 16),
           DateTimePickerRow(
@@ -58,14 +65,13 @@ class BookingInfoStep extends StatelessWidget {
             dateTime: endTime,
             onDateTap: onEndTimeTap,
             onTimeTap: onEndTimeTap,
+            enabled: enabled
           ),
-          SpecialRequestsSection(
-            earlyCheckIn: earlyCheckIn,
-            lateCheckOut: lateCheckOut,
-            specialRequests: specialRequests,
-            onEarlyCheckInChanged: onEarlyCheckInChanged,
-            onLateCheckOutChanged: onLateCheckOutChanged,
-            onSpecialRequestsChanged: onSpecialRequestsChanged,
+          const SizedBox(height: 16),
+          VoucherSelector(
+            vouchers: vouchers,
+            selectedVoucher: selectedVoucher,
+            onVoucherSelected: onVoucherSelected,
           ),
         ],
       ),
