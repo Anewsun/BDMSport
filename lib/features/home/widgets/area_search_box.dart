@@ -3,15 +3,32 @@ import 'package:bdm_sport/core/widgets/date_time_picker_row.dart';
 import 'package:bdm_sport/core/widgets/search_box_container.dart';
 
 class AreaSearchBox extends StatefulWidget {
-  const AreaSearchBox({super.key});
+  final Function(DateTime, DateTime)? onSearchChanged;
+  final DateTime? initialStartTime;
+  final DateTime? initialEndTime;
+
+  const AreaSearchBox({
+    super.key,
+    this.onSearchChanged,
+    this.initialStartTime,
+    this.initialEndTime,
+  });
 
   @override
   State<AreaSearchBox> createState() => _AreaSearchBoxState();
 }
 
 class _AreaSearchBoxState extends State<AreaSearchBox> {
-  DateTime checkInDate = DateTime.now();
-  DateTime checkOutDate = DateTime.now().add(const Duration(days: 1));
+  late DateTime checkInDate;
+  late DateTime checkOutDate;
+
+  @override
+  void initState() {
+    super.initState();
+    checkInDate = widget.initialStartTime ?? DateTime.now();
+    checkOutDate =
+        widget.initialEndTime ?? DateTime.now().add(const Duration(days: 1));
+  }
 
   void _openDatePicker(bool isCheckIn) async {
     DateTime initialDate = isCheckIn ? checkInDate : checkOutDate;
@@ -47,6 +64,7 @@ class _AreaSearchBoxState extends State<AreaSearchBox> {
           );
         }
       });
+      widget.onSearchChanged?.call(checkInDate, checkOutDate);
     }
   }
 
@@ -83,6 +101,7 @@ class _AreaSearchBoxState extends State<AreaSearchBox> {
           );
         }
       });
+      widget.onSearchChanged?.call(checkInDate, checkOutDate);
     }
   }
 
@@ -106,8 +125,7 @@ class _AreaSearchBoxState extends State<AreaSearchBox> {
         const SizedBox(height: 20),
         ElevatedButton(
           onPressed: () {
-            debugPrint('Nhận sân: ${checkInDate.toString()}');
-            debugPrint('Trả sân: ${checkOutDate.toString()}');
+            widget.onSearchChanged?.call(checkInDate, checkOutDate);
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF1167B1),

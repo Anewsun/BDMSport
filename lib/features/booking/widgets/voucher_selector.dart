@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/models/voucher_model.dart';
 import '../../../core/utils/formatters.dart';
 
 class VoucherSelector extends StatefulWidget {
@@ -15,28 +16,6 @@ class VoucherSelector extends StatefulWidget {
 
   @override
   State<VoucherSelector> createState() => _VoucherSelectorState();
-}
-
-class Voucher {
-  final String id;
-  final String code;
-  final String name;
-  final String description;
-  final double discountValue;
-  final String discountType;
-  final double? maxDiscount;
-  final double? minOrderValue;
-
-  Voucher({
-    required this.id,
-    required this.code,
-    required this.name,
-    required this.description,
-    required this.discountValue,
-    required this.discountType,
-    this.maxDiscount,
-    this.minOrderValue,
-  });
 }
 
 class _VoucherSelectorState extends State<VoucherSelector> {
@@ -92,15 +71,8 @@ class _VoucherSelectorState extends State<VoucherSelector> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            voucher.name,
+                            voucher.code,
                             style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          Text(
-                            voucher.description,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey,
-                            ),
                           ),
                         ],
                       ),
@@ -132,7 +104,7 @@ class _VoucherSelectorState extends State<VoucherSelector> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Đã chọn: ${_selectedVoucher!.name} (${_selectedVoucher!.discountType == 'percentage' ? '${_selectedVoucher!.discountValue}%' : formatPrice(_selectedVoucher!.discountValue)})',
+                    'Đã chọn: ${_selectedVoucher!.code} (${_selectedVoucher!.discountType == true ? '${_selectedVoucher!.discount}%' : formatPrice(_selectedVoucher!.discount)})',
                     style: TextStyle(
                       color: Colors.green.shade800,
                       fontWeight: FontWeight.w500,

@@ -21,8 +21,15 @@ import '../widgets/reviews_section.dart';
 
 class CourtDetailScreen extends ConsumerStatefulWidget {
   final String courtId;
+  final DateTime? initialStartTime;
+  final DateTime? initialEndTime;
 
-  const CourtDetailScreen({super.key, required this.courtId});
+  const CourtDetailScreen({
+    super.key,
+    required this.courtId,
+    this.initialStartTime,
+    this.initialEndTime,
+  });
 
   @override
   ConsumerState<CourtDetailScreen> createState() => _CourtDetailScreenState();
@@ -36,9 +43,15 @@ class _CourtDetailScreenState extends ConsumerState<CourtDetailScreen> {
   Review? userReview;
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
+  late DateTime _checkInDate;
+  late DateTime _checkOutDate;
+
   @override
   void initState() {
     super.initState();
+    _checkInDate = widget.initialStartTime ?? DateTime.now();
+    _checkOutDate =
+        widget.initialEndTime ?? DateTime.now().add(const Duration(hours: 1));
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadUserReview();
     });
@@ -67,10 +80,17 @@ class _CourtDetailScreenState extends ConsumerState<CourtDetailScreen> {
     _loadUserReview();
   }
 
+  void _onSearchChanged(DateTime startTime, DateTime endTime) {
+    setState(() {
+      _checkInDate = startTime;
+      _checkOutDate = endTime;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    final courtAsync = ref.watch(courtFutureProvider(widget.courtId));
-    final areasAsync = ref.watch(areasFutureProvider(widget.courtId));
+    final courtStream = ref.watch(courtStreamProvider(widget.courtId));
+    final areasStream = ref.watch(areasStreamProvider(widget.courtId));
     final reviewsAsync = ref.watch(courtReviewsFutureProvider(widget.courtId));
 
     return Scaffold(
@@ -78,10 +98,10 @@ class _CourtDetailScreenState extends ConsumerState<CourtDetailScreen> {
       body: SafeArea(
         child: Stack(
           children: [
-            courtAsync.when(
+            courtStream.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (error, stack) => Center(child: Text('Lỗi: $error')),
-              data: (court) => areasAsync.when(
+              data: (court) => areasStream.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (error, stack) => Center(child: Text('Lỗi: $error')),
                 data: (areas) => reviewsAsync.when(
@@ -163,7 +183,7 @@ class _CourtDetailScreenState extends ConsumerState<CourtDetailScreen> {
               },
             ),
 
-            areasAsync.when(
+            areasStream.when(
               loading: () => Container(),
               error: (error, stack) => Container(),
               data: (areas) => Positioned(
@@ -180,6 +200,9 @@ class _CourtDetailScreenState extends ConsumerState<CourtDetailScreen> {
                         'courtId': widget.courtId,
                         'areaId': areas[selectedAreaIndex!].id,
                         'area': areas[selectedAreaIndex!],
+                        'court': courtStream.value,
+                        'startTime': _checkInDate,
+                        'endTime': _checkOutDate,
                       },
                     );
                   },
@@ -325,7 +348,11 @@ class _CourtDetailScreenState extends ConsumerState<CourtDetailScreen> {
                 CourtMap(address: court.address),
                 const SizedBox(height: 16),
 
-                const AreaSearchBox(),
+                AreaSearchBox(
+                  onSearchChanged: _onSearchChanged,
+                  initialStartTime: _checkInDate,
+                  initialEndTime: _checkOutDate,
+                ),
                 const SizedBox(height: 16),
 
                 CourtSelection(

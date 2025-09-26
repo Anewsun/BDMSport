@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../auth/controllers/sign_in_controller.dart';
 
-class CustomerInfoStep extends StatefulWidget {
+class CustomerInfoStep extends ConsumerStatefulWidget {
   final TextEditingController nameController;
   final TextEditingController emailController;
   final TextEditingController phoneController;
@@ -17,13 +19,42 @@ class CustomerInfoStep extends StatefulWidget {
   });
 
   @override
-  State<CustomerInfoStep> createState() => _CustomerInfoStepState();
+  ConsumerState<CustomerInfoStep> createState() => _CustomerInfoStepState();
 }
 
-class _CustomerInfoStepState extends State<CustomerInfoStep> {
+class _CustomerInfoStepState extends ConsumerState<CustomerInfoStep> {
   bool _nameTouched = false;
   bool _emailTouched = false;
   bool _phoneTouched = false;
+  bool _userDataLoaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  void _loadUserData() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authState = ref.read(signInControllerProvider);
+      if (authState.user != null && !_userDataLoaded) {
+        setState(() {
+          if (widget.nameController.text.isEmpty) {
+            widget.nameController.text = authState.user!.name;
+          }
+          if (widget.emailController.text.isEmpty) {
+            widget.emailController.text = authState.user!.email;
+          }
+          if (widget.phoneController.text.isEmpty &&
+              authState.user!.phone != null) {
+            widget.phoneController.text = authState.user!.phone!;
+          }
+          _userDataLoaded = true;
+        });
+        widget.onValidationChanged();
+      }
+    });
+  }
 
   @override
   void didUpdateWidget(CustomerInfoStep oldWidget) {

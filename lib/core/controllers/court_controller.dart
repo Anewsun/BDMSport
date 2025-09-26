@@ -331,6 +331,33 @@ class CourtController {
       throw Exception(getFriendlyErrorMessage(e));
     }
   }
+
+  Stream<List<Area>> getAreasStream(String courtId) {
+    try {
+      return _areasRef
+          .where('courtId', isEqualTo: courtId)
+          .where('status', isEqualTo: 'available')
+          .orderBy('price', descending: true)
+          .snapshots()
+          .map((snap) => snap.docs.map((doc) => doc.data()).toList());
+    } catch (e) {
+      throw Exception(getFriendlyErrorMessage(e));
+    }
+  }
+
+  Stream<Court> getCourtStream(String courtId) {
+    try {
+      return _courtsRef.doc(courtId).snapshots().map((snap) {
+        if (snap.exists) {
+          return snap.data()!;
+        } else {
+          throw Exception('Không tìm thấy sân với ID: $courtId');
+        }
+      });
+    } catch (e) {
+      throw Exception(getFriendlyErrorMessage(e));
+    }
+  }
 }
 
 final courtControllerProvider = Provider<CourtController>((ref) {
@@ -351,6 +378,22 @@ final areasFutureProvider = FutureProvider.family<List<Area>, String>((
 ) async {
   final controller = ref.read(courtControllerProvider);
   return await controller.getAvailableAreasByCourt(courtId: courtId);
+});
+
+final courtStreamProvider = StreamProvider.family<Court, String>((
+  ref,
+  courtId,
+) {
+  final controller = ref.read(courtControllerProvider);
+  return controller.getCourtStream(courtId);
+});
+
+final areasStreamProvider = StreamProvider.family<List<Area>, String>((
+  ref,
+  courtId,
+) {
+  final controller = ref.read(courtControllerProvider);
+  return controller.getAreasStream(courtId);
 });
 
 final searchLocationsProvider =

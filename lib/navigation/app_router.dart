@@ -75,7 +75,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/booking-step',
-        builder: (_, _) => const BadmintonCourtBookingScreen(),
+        builder: (context, state) {
+          final bookingData = state.extra as Map<String, dynamic>? ?? {};
+          return BadmintonCourtBookingScreen(bookingData: bookingData);
+        },
       ),
       ShellRoute(
         builder: (_, _, child) => BottomNavBar(child: child),

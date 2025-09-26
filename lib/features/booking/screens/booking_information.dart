@@ -1,69 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/custom_header.dart';
 import '../../../core/widgets/custom_stepper.dart';
+import '../../auth/controllers/sign_in_controller.dart';
 import '../widgets/booking_info_step.dart';
 import '../widgets/customer_info_step.dart';
-import '../widgets/voucher_selector.dart';
+import '../../../core/controllers/booking_controller.dart';
+import '../../../core/controllers/voucher_controller.dart';
+import '../../../core/models/booking_model.dart';
+import '../../../core/models/court_model.dart';
+import '../../../core/models/area_model.dart';
+import '../../../core/models/voucher_model.dart';
 
-class BadmintonCourtBookingScreen extends StatefulWidget {
-  const BadmintonCourtBookingScreen({super.key});
+class BadmintonCourtBookingScreen extends ConsumerStatefulWidget {
+  final Map<String, dynamic> bookingData;
+
+  const BadmintonCourtBookingScreen({super.key, required this.bookingData});
 
   @override
-  BadmintonCourtBookingScreenState createState() =>
-      BadmintonCourtBookingScreenState();
+  ConsumerState<BadmintonCourtBookingScreen> createState() =>
+      _BadmintonCourtBookingScreenState();
 }
 
-class BadmintonCourtBookingScreenState
-    extends State<BadmintonCourtBookingScreen> {
+class _BadmintonCourtBookingScreenState
+    extends ConsumerState<BadmintonCourtBookingScreen> {
   int _currentStep = 1;
   final PageController _pageController = PageController();
+  bool _isLoading = false;
 
-  final Map<String, dynamic> _courtData = {
-    'name': 'Sân cầu lông Hồ Chí Minh',
-    'address': '123 Đường Lê Lợi, Quận 1',
-    'imageUrl': 'assets/images/court3.jpg',
-  };
+  late DateTime _startTime;
+  late DateTime _endTime;
+  late String _areaId;
 
-  final Map<String, dynamic> _areaData = {
-    'name': 'Khu vực VIP',
-    'price': 150000,
-    'imageUrl': null,
-  };
-
-  final List<Voucher> _vouchers = [
-    Voucher(
-      id: '1',
-      code: 'GIAM20K',
-      name: 'Giảm 20K',
-      description: 'Giảm 20.000đ cho đơn từ 100.000đ',
-      discountValue: 20000,
-      discountType: 'fixed',
-      minOrderValue: 100000,
-    ),
-    Voucher(
-      id: '2',
-      code: 'GIAM10%',
-      name: 'Giảm 10%',
-      description: 'Giảm 10% tối đa 50.000đ',
-      discountValue: 10,
-      discountType: 'percentage',
-      maxDiscount: 50000,
-    ),
-    Voucher(
-      id: '3',
-      code: 'HOTDEAL',
-      name: 'Giảm 30%',
-      description: 'Giảm 30% cho khách hàng mới',
-      discountValue: 30,
-      discountType: 'percentage',
-      maxDiscount: 100000,
-    ),
-  ];
-
-  DateTime _startTime = DateTime.now();
-  DateTime _endTime = DateTime.now().add(const Duration(hours: 1));
   final TextEditingController _startTimeController = TextEditingController();
   final TextEditingController _endTimeController = TextEditingController();
 
@@ -72,17 +43,78 @@ class BadmintonCourtBookingScreenState
   final TextEditingController _phoneController = TextEditingController();
 
   Voucher? _selectedVoucher;
-  double _originalPrice = 150000.0;
-  double _finalPrice = 15000.0;
+  double _originalPrice = 0.0;
+  double _finalPrice = 0.0;
+  List<Voucher> _availableVouchers = [];
 
   bool _validateAllFields = false;
+  late Court _court;
+  late Area _area;
 
   @override
   void initState() {
     super.initState();
+
+    _court = widget.bookingData['court'] as Court;
+    _area = widget.bookingData['area'] as Area;
+    _startTime = widget.bookingData['startTime'] as DateTime;
+    _endTime = widget.bookingData['endTime'] as DateTime;
+    _areaId = widget.bookingData['areaId'] as String? ?? _area.id!;
+
+    _originalPrice = _area.discountPercent > 0
+        ? _area.discountedPrice
+        : _area.price;
+    _finalPrice =
+        _originalPrice * _endTime.difference(_startTime).inMinutes / 60.0;
+
     _startTimeController.text = formatDateTime(_startTime);
     _endTimeController.text = formatDateTime(_endTime);
+
     _calculatePrice();
+    _loadAvailableVouchers();
+    _loadUserData();
+  }
+
+  void _loadUserData() {
+    final authState = ref.read(signInControllerProvider);
+    final user = authState.user;
+
+    if (user != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        setState(() {
+          if (_nameController.text.isEmpty) {
+            _nameController.text = user.name;
+          }
+          if (_emailController.text.isEmpty) {
+            _emailController.text = user.email;
+          }
+          if (_phoneController.text.isEmpty && user.phone != null) {
+            _phoneController.text = user.phone!;
+          }
+        });
+      });
+    }
+  }
+
+  void _loadAvailableVouchers() async {
+    try {
+      final authState = ref.read(signInControllerProvider);
+      final user = authState.user;
+
+      if (user == null) return;
+
+      final voucherController = VoucherController();
+      final vouchers = await voucherController.getAvailableVouchers(
+        userId: user.id,
+        userTier: user.tier,
+        orderValue: _finalPrice,
+      );
+      setState(() {
+        _availableVouchers = vouchers;
+      });
+    } catch (e) {
+      print('❌ Lỗi khi load voucher: $e');
+    }
   }
 
   bool get _isCustomerInfoValid {
@@ -110,25 +142,25 @@ class BadmintonCourtBookingScreenState
     if (_selectedVoucher != null) {
       double discount = 0;
 
-      if (_selectedVoucher!.discountType == 'percentage') {
-        discount = totalPrice * (_selectedVoucher!.discountValue / 100);
-        if (_selectedVoucher!.maxDiscount != null &&
-            discount > _selectedVoucher!.maxDiscount!) {
-          discount = _selectedVoucher!.maxDiscount!;
+      if (_selectedVoucher!.discountType == true) {
+        // percentage = true
+        discount = totalPrice * (_selectedVoucher!.discount / 100);
+        if (discount > _selectedVoucher!.maxDiscount) {
+          discount = _selectedVoucher!.maxDiscount;
         }
       } else {
-        discount = _selectedVoucher!.discountValue;
+        // fixed amount = false
+        discount = _selectedVoucher!.discount;
       }
 
-      if (_selectedVoucher!.minOrderValue == null ||
-          totalPrice >= _selectedVoucher!.minOrderValue!) {
+      if (totalPrice >= _selectedVoucher!.minOrderValue) {
         totalPrice -= discount;
         if (totalPrice < 0) totalPrice = 0;
       }
     }
 
     setState(() {
-      _finalPrice = totalPrice / hours;
+      _finalPrice = totalPrice;
     });
   }
 
@@ -235,28 +267,37 @@ class BadmintonCourtBookingScreenState
   }
 
   void _showConfirmationDialog() {
+    final authState = ref.read(signInControllerProvider);
+    final user = authState.user;
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
         title: const Text('Xác nhận đặt sân'),
-        content: const Text('Bạn có chắc chắn muốn đặt sân này?'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Người đặt: ${user?.name ?? _nameController.text}'),
+            Text('SĐT: ${user?.phone ?? _phoneController.text}'),
+            Text('Sân: ${_court.name}'),
+            Text('Khu vực: ${_area.nameArea}'),
+            Text(
+              'Thời gian: ${formatDateTime(_startTime)} - ${formatDateTime(_endTime)}',
+            ),
+            Text('Tổng tiền: ${formatPrice(_finalPrice)}'),
+            if (_selectedVoucher != null)
+              Text('Voucher: ${_selectedVoucher!.code}'),
+          ],
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Hủy'),
           ),
           TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Fluttertoast.showToast(
-                msg: 'Đặt sân thành công!',
-                toastLength: Toast.LENGTH_SHORT,
-                gravity: ToastGravity.BOTTOM,
-                backgroundColor: Colors.green,
-                textColor: Colors.white,
-                fontSize: 18,
-              );
-            },
+            onPressed: () => _createBooking(),
             child: const Text('Xác nhận'),
           ),
         ],
@@ -264,10 +305,106 @@ class BadmintonCourtBookingScreenState
     );
   }
 
+  Future<void> _createBooking() async {
+    if (_isLoading) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final authState = ref.read(signInControllerProvider);
+      final user = authState.user;
+      if (user == null) throw Exception('User chưa đăng nhập');
+
+      final bookingController = BookingController();
+
+      final isAvailable = await bookingController.checkAreaAvailability(
+        areaId: _areaId,
+        checkIn: _startTime,
+        checkOut: _endTime,
+      );
+
+      if (!isAvailable) {
+        Fluttertoast.showToast(msg: 'Khu vực này đã được đặt...');
+        return;
+      }
+
+      final double hours = _endTime.difference(_startTime).inMinutes / 60.0;
+      final double totalOriginalPrice = _originalPrice * hours;
+
+      final booking = Booking(
+        userId: user.id,
+        areaId: _areaId,
+        contactInfo: {
+          'name': _nameController.text.isNotEmpty
+              ? _nameController.text
+              : user.name,
+          'email': _emailController.text.isNotEmpty
+              ? _emailController.text
+              : user.email,
+          'phone': _phoneController.text.isNotEmpty
+              ? _phoneController.text
+              : (user.phone ?? ''),
+        },
+        checkIn: _startTime,
+        checkOut: _endTime,
+        voucherId: _selectedVoucher?.id,
+        originalPrice: totalOriginalPrice,
+        discountAmount: _selectedVoucher != null
+            ? totalOriginalPrice - _finalPrice
+            : 0,
+        finalPrice: _finalPrice,
+        status: 'pending',
+        paymentStatus: 'pending',
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+
+      final bookingId = await bookingController.createBooking(booking);
+
+      if (bookingId != null) {
+        if (_selectedVoucher != null) {
+          await bookingController.applyVoucherToBooking(
+            voucherId: _selectedVoucher!.id,
+            userId: user.id,
+            bookingId: bookingId,
+          );
+        }
+
+        if (mounted) {
+          Navigator.pop(context);
+
+          Fluttertoast.showToast(
+            msg: 'Đặt sân thành công',
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            backgroundColor: Colors.green,
+            textColor: Colors.white,
+            fontSize: 18,
+          );
+
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              context.go('/booking-list');
+            }
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+        Fluttertoast.showToast(msg: 'Lỗi khi đặt sân: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFF0F4FF),
+      backgroundColor: const Color(0xFFF0F4FF),
       body: SafeArea(
         child: Column(
           children: [
@@ -305,19 +442,20 @@ class BadmintonCourtBookingScreenState
                     validateAll: _validateAllFields,
                   ),
                   BookingInfoStep(
-                    courtData: _courtData,
-                    areaData: _areaData,
+                    court: _court,
+                    area: _area,
                     startTime: _startTime,
                     endTime: _endTime,
                     startTimeController: _startTimeController,
                     endTimeController: _endTimeController,
                     onStartTimeTap: () => _selectDateTime(context, true),
                     onEndTimeTap: () => _selectDateTime(context, false),
-                    vouchers: _vouchers,
+                    vouchers: _availableVouchers,
                     selectedVoucher: _selectedVoucher,
                     onVoucherSelected: _onVoucherSelected,
                     originalPrice: _originalPrice,
                     finalPrice: _finalPrice,
+                    hasDiscount: _selectedVoucher != null,
                   ),
                 ],
               ),
@@ -325,20 +463,33 @@ class BadmintonCourtBookingScreenState
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: ElevatedButton(
-                onPressed: _handleContinue,
+                onPressed: _isLoading ? null : _handleContinue,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: _currentStep == 1
-                      ? (_isCustomerInfoValid ? Colors.blue : Colors.grey)
-                      : (_isBookingInfoValid ? Colors.blue : Colors.grey),
+                  backgroundColor: _isLoading
+                      ? Colors.grey
+                      : (_currentStep == 1
+                            ? (_isCustomerInfoValid ? Colors.blue : Colors.grey)
+                            : (_isBookingInfoValid
+                                  ? Colors.blue
+                                  : Colors.grey)),
                   minimumSize: const Size(double.infinity, 50),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(25),
-                  ),
                 ),
-                child: Text(
-                  _currentStep == 1 ? 'Tiếp tục' : 'Xác nhận đặt sân',
-                  style: const TextStyle(fontSize: 18, color: Colors.white),
-                ),
+                child: _isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation(Colors.white),
+                        ),
+                      )
+                    : Text(
+                        _currentStep == 1 ? 'Tiếp tục' : 'Xác nhận đặt sân',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          color: Colors.white,
+                        ),
+                      ),
               ),
             ),
           ],

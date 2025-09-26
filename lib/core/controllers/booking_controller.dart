@@ -53,18 +53,69 @@ class BookingController {
   Future<String?> createBooking(Booking booking) async {
     try {
       if (!_validateBooking(booking)) {
-        return null;
+        throw Exception('Thông tin booking không hợp lệ');
       }
 
-      final docRef = await _firestore
-          .collection(collectionName)
-          .add(booking.toMap());
+      final isAvailable = await checkAreaAvailability(
+        areaId: booking.areaId,
+        checkIn: booking.checkIn,
+        checkOut: booking.checkOut,
+      );
 
-      print('✅ Đã tạo booking thành công với ID: ${docRef.id}');
-      return docRef.id;
+      if (!isAvailable) {
+        throw Exception('Khu vực đã được đặt trong khoảng thời gian này');
+      }
+
+      final bookingRef = _firestore.collection(collectionName).doc();
+      await bookingRef.set(booking.toMap());
+      await _firestore.collection('areas').doc(booking.areaId).update({
+        'status': 'booked',
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      print('✅ Đã tạo booking thành công với ID: ${bookingRef.id}');
+      return bookingRef.id;
     } catch (e) {
       print('❌ Lỗi khi tạo booking: $e');
-      return null;
+      rethrow;
+    }
+  }
+
+  Future<void> applyVoucherToBooking({
+    required String voucherId,
+    required String userId,
+    required String bookingId,
+  }) async {
+    try {
+      final voucherRef = _firestore.collection('vouchers').doc(voucherId);
+      final voucherDoc = await voucherRef.get();
+
+      if (voucherDoc.exists) {
+        final voucherData = voucherDoc.data() as Map<String, dynamic>;
+        final currentUsageCount = voucherData['usageCount'] ?? 0;
+        List<String> usedBy = List<String>.from(voucherData['usedBy'] ?? []);
+
+        if (!usedBy.contains(userId)) {
+          usedBy.add(userId);
+        }
+
+        final batch = _firestore.batch();
+        batch.update(voucherRef, {
+          'usageCount': currentUsageCount + 1,
+          'usedBy': usedBy,
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+
+        if (voucherData['usageLimit'] != null &&
+            (currentUsageCount + 1) >= voucherData['usageLimit']) {
+          batch.update(voucherRef, {'status': 'inactive'});
+        }
+
+        await batch.commit();
+      }
+    } catch (e) {
+      print('❌ Lỗi khi áp dụng voucher: $e');
+      rethrow;
     }
   }
 
