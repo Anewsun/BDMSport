@@ -37,26 +37,36 @@ class Booking {
     required this.updatedAt,
   });
 
+  static DateTime _parseDate(dynamic value) {
+    if (value is Timestamp) {
+      return value.toDate();
+    } else if (value is String) {
+      return DateTime.tryParse(value) ?? DateTime.now();
+    } else {
+      throw Exception("Invalid date format: $value");
+    }
+  }
+
   factory Booking.fromMap(Map<String, dynamic> map, String id) {
     return Booking(
       id: id,
       userId: map['userId'] as String,
       areaId: map['areaId'] as String,
-      contactInfo: Map<String, String>.from(map['contactInfo'] as Map),
-      checkIn: (map['checkIn'] as Timestamp).toDate(),
-      checkOut: (map['checkOut'] as Timestamp).toDate(),
-      voucherId: map['voucherId'] as String?,
-      originalPrice: (map['originalPrice'] as num).toDouble(),
-      discountAmount: (map['discountAmount'] as num).toDouble(),
-      finalPrice: (map['finalPrice'] as num).toDouble(),
-      status: map['status'] as String? ?? 'pending',
-      paymentStatus: map['paymentStatus'] as String? ?? 'pending',
+      contactInfo: Map<String, String>.from(map['contactInfo'] ?? {}),
+      checkIn: _parseDate(map['checkIn']),
+      checkOut: _parseDate(map['checkOut']),
+      voucherId: map['voucherId'],
+      originalPrice: (map['originalPrice'] ?? 0).toDouble(),
+      discountAmount: (map['discountAmount'] ?? 0).toDouble(),
+      finalPrice: (map['finalPrice'] ?? 0).toDouble(),
+      status: map['status'] ?? 'pending',
+      paymentStatus: map['paymentStatus'] ?? 'pending',
       cancelledAt: map['cancelledAt'] != null
-          ? (map['cancelledAt'] as Timestamp).toDate()
+          ? _parseDate(map['cancelledAt'])
           : null,
-      cancellationReason: map['cancellationReason'] as String?,
-      createdAt: (map['createdAt'] as Timestamp).toDate(),
-      updatedAt: (map['updatedAt'] as Timestamp).toDate(),
+      cancellationReason: map['cancellationReason'],
+      createdAt: _parseDate(map['createdAt']),
+      updatedAt: _parseDate(map['updatedAt']),
     );
   }
 
@@ -69,20 +79,18 @@ class Booking {
       'userId': userId,
       'areaId': areaId,
       'contactInfo': contactInfo,
-      'checkIn': Timestamp.fromDate(checkIn),
-      'checkOut': Timestamp.fromDate(checkOut),
+      'checkIn': checkIn,
+      'checkOut': checkOut,
       'voucherId': voucherId,
       'originalPrice': originalPrice,
       'discountAmount': discountAmount,
       'finalPrice': finalPrice,
       'status': status,
       'paymentStatus': paymentStatus,
-      'cancelledAt': cancelledAt != null
-          ? Timestamp.fromDate(cancelledAt!)
-          : null,
+      'cancelledAt': cancelledAt,
       'cancellationReason': cancellationReason,
-      'createdAt': Timestamp.fromDate(createdAt),
-      'updatedAt': Timestamp.fromDate(updatedAt),
+      'createdAt': createdAt,
+      'updatedAt': updatedAt,
     };
   }
 

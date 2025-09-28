@@ -1,90 +1,78 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../core/controllers/booking_controller.dart';
+import '../../../core/models/booking_model.dart';
 import '../../../core/utils/booking_status_utils.dart';
 import '../../../core/widgets/custom_header.dart';
 import '../../../navigation/bottom_nav_bar.dart';
 import '../widgets/booking_card.dart';
+import '../../auth/controllers/sign_in_controller.dart';
 
-class BookingListScreen extends StatefulWidget {
+class BookingListScreen extends ConsumerStatefulWidget {
   const BookingListScreen({super.key});
 
   @override
-  State<BookingListScreen> createState() => _BookingListScreenState();
+  ConsumerState<BookingListScreen> createState() => _BookingListScreenState();
 }
 
-class _BookingListScreenState extends State<BookingListScreen> {
+class _BookingListScreenState extends ConsumerState<BookingListScreen> {
   String? _filterStatus;
-  bool _isLoading = false;
+  bool isLoading = false;
   bool _initialLoading = true;
   String? _error;
-  final List<Map<String, dynamic>> _bookings = [];
+  Stream<List<Booking>>? _bookingsStream;
+
+  final BookingController _bookingController = BookingController();
 
   @override
   void initState() {
     super.initState();
-    _loadBookings();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadBookings();
+    });
   }
 
-  Future<void> _loadBookings() async {
+  String? get _userId {
+    final authState = ref.read(signInControllerProvider);
+    return authState.user?.id;
+  }
+
+  void _loadBookings() {
+    final userId = _userId;
+
+    if (userId == null) {
+      setState(() {
+        _initialLoading = false;
+        _error = 'Vui lòng đăng nhập để xem lịch sử đặt sân';
+      });
+      return;
+    }
+
     setState(() {
-      _isLoading = true;
+      isLoading = true;
       _error = null;
     });
 
     try {
-      await Future.delayed(const Duration(seconds: 1));
-
-      final mockBookings = [
-        {
-          'id': '1',
-          'area': {
-            'name': 'Sân cầu lông số 1',
-            'images': ['assets/images/court1.jpg'],
-          },
-          'checkIn': DateTime.now()
-              .add(const Duration(days: 1))
-              .toIso8601String(),
-          'checkOut': DateTime.now()
-              .add(const Duration(days: 1, hours: 2))
-              .toIso8601String(),
-          'status': 'confirmed',
-          'finalPrice': 200000,
-          'originalPrice': 220000,
-          'discountAmount': 20000,
-          'contactInfo': {'name': 'Nguyễn Văn An'},
-        },
-        {
-          'id': '2',
-          'area': {
-            'name': 'Sân cầu lông số 2',
-            'images': ['assets/images/court4.jpg'],
-          },
-          'checkIn': DateTime.now()
-              .subtract(const Duration(days: 2))
-              .toIso8601String(),
-          'checkOut': DateTime.now()
-              .subtract(const Duration(days: 2, hours: 1, minutes: 30))
-              .toIso8601String(),
-          'status': 'completed',
-          'finalPrice': 150000,
-          'originalPrice': 150000,
-          'contactInfo': {'name': 'Trần Thị Bảy'},
-        },
-      ];
+      if (_filterStatus != null && _filterStatus!.isNotEmpty) {
+        _bookingsStream = _bookingController.getBookingsByUserAndStatus(
+          userId,
+          _filterStatus!,
+        );
+      } else {
+        _bookingsStream = _bookingController.getBookingsByUser(userId);
+      }
 
       setState(() {
-        _bookings.clear();
-        _bookings.addAll(mockBookings);
         _initialLoading = false;
       });
     } catch (e) {
       setState(() {
         _error = 'Lỗi khi tải dữ liệu: ${e.toString()}';
         _initialLoading = false;
-      });
-    } finally {
-      setState(() {
-        _isLoading = false;
+        isLoading = false;
       });
     }
   }
@@ -93,31 +81,59 @@ class _BookingListScreenState extends State<BookingListScreen> {
     setState(() {
       _filterStatus = status == _filterStatus ? null : status;
     });
+    _loadBookings();
+  }
+
+  Future<Map<String, dynamic>> _bookingToMap(Booking booking) async {
+    String areaName = 'Khu vực không xác định';
+
+    try {
+      final areaDoc = await FirebaseFirestore.instance
+          .collection('areas')
+          .doc(booking.areaId)
+          .get();
+      if (areaDoc.exists) {
+        areaName = areaDoc.data()?['nameArea'] ?? areaName;
+      }
+    } catch (_) {}
+
+    String checkInStr;
+    String checkOutStr;
+
+    try {
+      checkInStr = booking.checkIn.toIso8601String();
+    } catch (_) {
+      checkInStr = booking.checkIn.toString();
+    }
+
+    try {
+      checkOutStr = booking.checkOut.toIso8601String();
+    } catch (_) {
+      checkOutStr = booking.checkOut.toString();
+    }
+
+    return {
+      'id': booking.id,
+      'areaId': booking.areaId,
+      'area': {'name': areaName},
+      'checkIn': checkInStr,
+      'checkOut': checkOutStr,
+      'status': booking.status,
+      'finalPrice': booking.finalPrice,
+      'originalPrice': booking.originalPrice,
+      'discountAmount': booking.discountAmount,
+      'contactInfo': booking.contactInfo,
+    };
   }
 
   @override
   Widget build(BuildContext context) {
-    final filteredBookings = _filterStatus != null
-        ? _bookings
-              .where((booking) => booking['status'] == _filterStatus)
-              .toList()
-        : _bookings;
+    final authState = ref.watch(signInControllerProvider);
 
-    if (_initialLoading) {
+    if (authState.isLoading && _initialLoading) {
       return const Scaffold(
         body: Center(
           child: CircularProgressIndicator(color: Color(0xFF003366)),
-        ),
-      );
-    }
-
-    if (_error != null) {
-      return Scaffold(
-        body: Center(
-          child: Text(
-            _error!,
-            style: const TextStyle(color: Colors.red, fontSize: 16),
-          ),
         ),
       );
     }
@@ -163,64 +179,150 @@ class _BookingListScreenState extends State<BookingListScreen> {
                   ],
                 ),
               ),
-              Expanded(
-                child: _isLoading
-                    ? const Center(
-                        child: CircularProgressIndicator(
-                          color: Color(0xFF003366),
-                        ),
-                      )
-                    : filteredBookings.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Text('📭', style: TextStyle(fontSize: 40)),
-                            const SizedBox(height: 16),
-                            Text(
-                              _filterStatus != null
-                                  ? 'Không có booking ${BookingStatusUtils.getStatusText(_filterStatus!)}'
-                                  : 'Chưa có sân nào được đặt',
-                              style: const TextStyle(
-                                fontSize: 18,
-                                color: Colors.black,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              _filterStatus != null
-                                  ? 'Thử lọc trạng thái khác'
-                                  : 'Hãy đặt sân đầu tiên của bạn!',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : RefreshIndicator(
-                        onRefresh: _loadBookings,
-                        color: const Color(0xFF003366),
-                        child: ListView.builder(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: filteredBookings.length,
-                          itemBuilder: (context, index) {
-                            final booking = filteredBookings[index];
-                            return BookingCard(
-                              booking: booking,
-                              onPress: () {
-                                context.push('/booking-detail');
-                              },
-                            );
-                          },
-                        ),
-                      ),
-              ),
+              Expanded(child: _buildContent(authState)),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildContent(AuthState authState) {
+    if (_initialLoading) {
+      return const Center(
+        child: CircularProgressIndicator(color: Color(0xFF003366)),
+      );
+    }
+
+    if (_error != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, size: 64, color: Colors.red),
+            const SizedBox(height: 16),
+            Text(
+              _error!,
+              style: const TextStyle(fontSize: 16, color: Colors.red),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _loadBookings,
+              child: const Text('Thử lại'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_bookingsStream == null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const CircularProgressIndicator(color: Color(0xFF003366)),
+            const SizedBox(height: 16),
+            const Text('Đang kết nối...'),
+          ],
+        ),
+      );
+    }
+
+    return StreamBuilder<List<Booking>>(
+      stream: _bookingsStream,
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                const SizedBox(height: 16),
+                Text(
+                  'Lỗi: ${snapshot.error}',
+                  style: const TextStyle(fontSize: 16, color: Colors.red),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: _loadBookings,
+                  child: const Text('Thử lại'),
+                ),
+              ],
+            ),
+          );
+        }
+
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+            child: CircularProgressIndicator(color: Color(0xFF003366)),
+          );
+        }
+
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text('📭', style: TextStyle(fontSize: 40)),
+                const SizedBox(height: 16),
+                Text(
+                  _filterStatus != null
+                      ? 'Không có booking ${BookingStatusUtils.getStatusText(_filterStatus!)}'
+                      : 'Chưa có sân nào được đặt',
+                  style: const TextStyle(fontSize: 18, color: Colors.black),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _filterStatus != null
+                      ? 'Thử lọc trạng thái khác'
+                      : 'Hãy đặt sân đầu tiên của bạn!',
+                  style: const TextStyle(fontSize: 16, color: Colors.grey),
+                ),
+              ],
+            ),
+          );
+        }
+
+        final bookings = snapshot.data!;
+
+        return RefreshIndicator(
+          onRefresh: () async {
+            _loadBookings();
+            await Future.delayed(const Duration(seconds: 1));
+          },
+          color: const Color(0xFF003366),
+          child: ListView.builder(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
+            itemCount: bookings.length,
+            itemBuilder: (context, index) {
+              final booking = bookings[index];
+              return FutureBuilder<Map<String, dynamic>>(
+                future: _bookingToMap(booking),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) {
+                    return const Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: LinearProgressIndicator(),
+                    );
+                  }
+                  return BookingCard(
+                    booking: snapshot.data!,
+                    onPress: () {
+                      final bookingId = booking.id;
+                      if (bookingId == null || bookingId.isEmpty) {
+                        return;
+                      }
+
+                      context.push('/booking-detail/$bookingId');
+                    },
+                  );
+                },
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }

@@ -136,7 +136,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 child: CustomHeader(
                   title: 'Thông tin cá nhân',
                   showBackIcon: true,
-                  onBackPress: () => context.pop(),
+                  onBackPress: () {
+                    context.go('/setting');
+                  },
                 ),
               ),
               Expanded(
@@ -166,8 +168,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             snapshot.data!.data() as Map<String, dynamic>;
                         final balance = data["balance"] ?? 0;
                         final tier = data["tier"] ?? user.tier;
+                        final doubleBalance = (balance as num).toDouble();
 
-                        return TierSection(tier: tier, balance: balance);
+                        return TierSection(tier: tier, balance: doubleBalance);
                       },
                     ),
                     SizedBox(height: 10),

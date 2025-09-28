@@ -29,14 +29,14 @@ class BookingCard extends StatelessWidget {
       }
 
       dynamic firstImage;
-      if (booking['area'] != null && booking['area']['images'] != null) {
-        firstImage = booking['area']['images'][0];
+      if (booking['area'] != null && booking['area']['image'] != null) {
+        firstImage = booking['area']['image'][0];
       }
 
       final imageUrl =
           firstImage?['url'] ??
           (firstImage is String ? firstImage : null) ??
-          booking['area']?['imageUrl'] ??
+          booking['area']?['image'] ??
           booking['area']?['courtId']?['images']?[0]?['url'];
 
       if (imageUrl != null && imageUrl.toString().isNotEmpty) {

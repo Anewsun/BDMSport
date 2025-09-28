@@ -66,8 +66,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, _) => const NotificationsScreen(),
       ),
       GoRoute(
-        path: '/booking-detail',
-        builder: (_, _) => const BookingDetailScreen(bookingId: ''),
+        path: '/booking-detail/:bookingId',
+        builder: (context, state) {
+          final bookingId = state.pathParameters['bookingId'] ?? '';
+          return BookingDetailScreen(bookingId: bookingId);
+        },
       ),
       GoRoute(
         path: '/chat',

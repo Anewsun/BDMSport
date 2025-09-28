@@ -144,71 +144,55 @@ class BookingController {
     }
   }
 
-  Future<bool> updateBookingStatus({
-    required String bookingId,
-    required String status,
-  }) async {
+  Future<bool> confirmBooking(String bookingId) async {
     try {
-      final updateData = {
-        'status': status,
+      await _firestore.collection(collectionName).doc(bookingId).update({
+        'status': 'confirmed',
         'updatedAt': FieldValue.serverTimestamp(),
-      };
-
-      if (status == 'completed') {
-        updateData['completedAt'] = FieldValue.serverTimestamp();
-      }
-
-      await _firestore
-          .collection(collectionName)
-          .doc(bookingId)
-          .update(updateData);
-
-      print('✅ Đã cập nhật trạng thái booking $bookingId thành: $status');
+      });
       return true;
     } catch (e) {
-      print('❌ Lỗi khi cập nhật trạng thái booking: $e');
+      print('❌ Lỗi khi xác nhận booking: $e');
       return false;
     }
   }
 
-  Future<bool> updatePaymentStatus({
+  Future<bool> processPayment({
     required String bookingId,
-    required String paymentStatus,
+    required String userId,
+    required double amount,
   }) async {
     try {
-      await _firestore.collection(collectionName).doc(bookingId).update({
-        'paymentStatus': paymentStatus,
+      final userRef = _firestore.collection('users').doc(userId);
+      final userDoc = await userRef.get();
+
+      if (!userDoc.exists) {
+        throw Exception('User not found');
+      }
+
+      final currentBalance = (userDoc.data()?['balance'] ?? 0).toDouble();
+      if (currentBalance < amount) {
+        throw Exception('Số dư không đủ');
+      }
+
+      final batch = _firestore.batch();
+
+      batch.update(userRef, {
+        'balance': currentBalance - amount,
         'updatedAt': FieldValue.serverTimestamp(),
       });
 
-      print(
-        '✅ Đã cập nhật trạng thái thanh toán booking $bookingId thành: $paymentStatus',
-      );
+      batch.update(_firestore.collection(collectionName).doc(bookingId), {
+        'status': 'completed',
+        'paymentStatus': 'paid',
+        'updatedAt': FieldValue.serverTimestamp(),
+        'completedAt': FieldValue.serverTimestamp(),
+      });
+
+      await batch.commit();
       return true;
     } catch (e) {
-      print('❌ Lỗi khi cập nhật trạng thái thanh toán: $e');
-      return false;
-    }
-  }
-
-  Future<bool> updateBooking({
-    required String bookingId,
-    required Booking booking,
-  }) async {
-    try {
-      if (!_validateBooking(booking)) {
-        return false;
-      }
-
-      await _firestore
-          .collection(collectionName)
-          .doc(bookingId)
-          .update(booking.toMap());
-
-      print('✅ Đã cập nhật booking thành công: $bookingId');
-      return true;
-    } catch (e) {
-      print('❌ Lỗi khi cập nhật booking: $e');
+      print('❌ Lỗi khi xử lý thanh toán: $e');
       return false;
     }
   }
